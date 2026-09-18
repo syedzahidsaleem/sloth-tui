@@ -2,18 +2,24 @@
 //!
 //! Terminal interface for movies, anime, sports, F1, and live TV.
 
+pub mod cache;
 pub mod config;
 pub mod daemon;
 pub mod db;
+pub mod download;
+pub mod favorites;
+pub mod history;
 pub mod logging;
 pub mod metadata;
 pub mod models;
 pub mod net;
 pub mod player;
 pub mod providers;
+pub mod proxy;
 pub mod service;
 pub mod tracking;
 pub mod tui;
+pub mod updater;
 
 /// Top-level application error type for Sloth.
 #[derive(Debug, thiserror::Error)]
