@@ -1,0 +1,9 @@
+/target/
+Cargo.lock
+*.db
+*.db-shm
+*.db-wal
+.env
+sloth.log
+sloth-*.log
+cache/
