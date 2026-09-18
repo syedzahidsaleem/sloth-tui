@@ -34,6 +34,216 @@ pub enum HomeDeckTab {
     Favorites,
 }
 
+/// Active top-level navigation tab.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Tab {
+    #[default]
+    Movies,
+    Anime,
+    Sports,
+    F1,
+    LiveTV,
+    History,
+    Favorites,
+    Settings,
+}
+
+impl Tab {
+    pub const ALL: [Self; 8] = [
+        Self::Movies,
+        Self::Anime,
+        Self::Sports,
+        Self::F1,
+        Self::LiveTV,
+        Self::History,
+        Self::Favorites,
+        Self::Settings,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Self::Movies => "Movies",
+            Self::Anime => "Anime",
+            Self::Sports => "Sports",
+            Self::F1 => "F1",
+            Self::LiveTV => "Live TV",
+            Self::History => "History",
+            Self::Favorites => "Favorites",
+            Self::Settings => "Settings",
+        }
+    }
+
+    pub fn index(self) -> usize {
+        match self {
+            Self::Movies => 0,
+            Self::Anime => 1,
+            Self::Sports => 2,
+            Self::F1 => 3,
+            Self::LiveTV => 4,
+            Self::History => 5,
+            Self::Favorites => 6,
+            Self::Settings => 7,
+        }
+    }
+
+    pub fn from_index(idx: usize) -> Self {
+        match idx {
+            0 => Self::Movies,
+            1 => Self::Anime,
+            2 => Self::Sports,
+            3 => Self::F1,
+            4 => Self::LiveTV,
+            5 => Self::History,
+            6 => Self::Favorites,
+            7 => Self::Settings,
+            _ => Self::Movies,
+        }
+    }
+
+    pub fn next(self) -> Self {
+        Self::from_index((self.index() + 1) % Self::ALL.len())
+    }
+
+    pub fn previous(self) -> Self {
+        Self::from_index((self.index() + Self::ALL.len() - 1) % Self::ALL.len())
+    }
+}
+
+/// Column focus inside the Sports tab.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum SportsColumnFocus {
+    #[default]
+    Sports,
+    Matches,
+    Streams,
+}
+
+impl SportsColumnFocus {
+    pub fn next(self) -> Self {
+        match self {
+            Self::Sports => Self::Matches,
+            Self::Matches => Self::Streams,
+            Self::Streams => Self::Sports,
+        }
+    }
+
+    pub fn previous(self) -> Self {
+        match self {
+            Self::Sports => Self::Streams,
+            Self::Matches => Self::Sports,
+            Self::Streams => Self::Matches,
+        }
+    }
+}
+
+/// Live match representation for sports streaming.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct LiveMatch {
+    pub id: String,
+    pub title: String,
+    pub category: String,
+    pub teams: Option<(String, String)>,
+    pub competition: Option<String>,
+    pub starts_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub is_popular: bool,
+    pub poster: Option<String>,
+    pub streams: Vec<MatchStream>,
+}
+
+/// Stream URL option for a live match.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct MatchStream {
+    pub id: String,
+    pub hd_url: Option<String>,
+    pub sd_url: Option<String>,
+    pub embed_url: Option<String>,
+    pub language: Option<String>,
+}
+
+/// Formula 1 Grand Prix weekend session data.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct F1Session {
+    pub round: u32,
+    pub name: String,
+    pub circuit: String,
+    pub country: String,
+    pub sessions: Vec<F1SessionSlot>,
+}
+
+/// Individual scheduled slot within an F1 Grand Prix weekend.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct F1SessionSlot {
+    pub kind: F1SessionKind,
+    pub starts_at: chrono::DateTime<chrono::Utc>,
+    pub stream_url: Option<String>,
+}
+
+/// Category of F1 Grand Prix session.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub enum F1SessionKind {
+    FreePractice1,
+    FreePractice2,
+    FreePractice3,
+    Qualifying,
+    Sprint,
+    SprintQualifying,
+    Race,
+}
+
+impl F1SessionKind {
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::FreePractice1 => "Free Practice 1",
+            Self::FreePractice2 => "Free Practice 2",
+            Self::FreePractice3 => "Free Practice 3",
+            Self::Qualifying => "Qualifying",
+            Self::Sprint => "Sprint",
+            Self::SprintQualifying => "Sprint Qualifying",
+            Self::Race => "Race",
+        }
+    }
+}
+
+/// Scheduled or currently airing anime episode.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct AiringAnime {
+    pub id: String,
+    pub title: String,
+    pub episode_number: u32,
+    pub airing_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+/// State machine for the Anime tab.
+#[derive(Debug, Clone, Default)]
+pub struct AnimeTabState {
+    pub results: Vec<crate::providers::models::Media>,
+    pub selected_idx: usize,
+    pub is_dub: bool,
+    pub airing_schedule: Vec<AiringAnime>,
+    pub schedule_visible: bool,
+}
+
+/// State machine for the Sports tab.
+#[derive(Debug, Clone, Default)]
+pub struct SportsTabState {
+    pub sports: Vec<String>,
+    pub selected_sport_idx: usize,
+    pub matches: Vec<LiveMatch>,
+    pub selected_match_idx: usize,
+    pub streams: Vec<MatchStream>,
+    pub selected_stream_idx: usize,
+    pub focus: SportsColumnFocus,
+}
+
+/// State machine for the Formula 1 tab.
+#[derive(Debug, Clone, Default)]
+pub struct F1TabState {
+    pub calendar: Vec<F1Session>,
+    pub selected_session_idx: usize,
+    pub countdown: Option<std::time::Duration>,
+    pub loading: bool,
+}
+
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum InputMode {
     #[default]
@@ -327,6 +537,10 @@ pub struct AppState {
     pub favorites_focus: bool,
     pub home_deck_tab: HomeDeckTab,
     pub favorites_landing_state: ListState,
+    pub active_tab: Tab,
+    pub anime_tab: AnimeTabState,
+    pub sports_tab: SportsTabState,
+    pub f1_tab: F1TabState,
 }
 
 impl Default for AppState {
@@ -495,6 +709,10 @@ impl Default for AppState {
             favorites_focus: false,
             home_deck_tab: HomeDeckTab::default(),
             favorites_landing_state: ListState::default(),
+            active_tab: Tab::Movies,
+            anime_tab: AnimeTabState::default(),
+            sports_tab: SportsTabState::default(),
+            f1_tab: F1TabState::default(),
         }
     }
 }
@@ -513,6 +731,16 @@ impl AppState {
         } else {
             AppMode::Streaming
         }
+    }
+
+    /// Advances to the next navigation tab.
+    pub fn next_tab(&mut self) {
+        self.active_tab = self.active_tab.next();
+    }
+
+    /// Returns to the previous navigation tab.
+    pub fn prev_tab(&mut self) {
+        self.active_tab = self.active_tab.previous();
     }
     pub fn reset_details_view(&mut self) {
         self.details_pane = DetailsPane::default();
