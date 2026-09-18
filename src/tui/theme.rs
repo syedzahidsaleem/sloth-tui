@@ -511,6 +511,12 @@ impl Theme {
                 mantle: Style::default().fg(Color::White),
                 crust: Style::default().fg(Color::White),
                 is_light: true,
+                bg: Color::White,
+                bg_elevated: Color::White,
+                bg_surface: Color::Gray,
+                text_muted: Color::DarkGray,
+                tab_active: Color::Blue,
+                tab_inactive: Color::DarkGray,
             };
         }
         Self {
