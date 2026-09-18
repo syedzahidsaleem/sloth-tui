@@ -171,14 +171,21 @@ impl MovieBoxService {
                 let fourk = self.fourk_client.as_ref().ok_or_else(|| {
                     ProviderError::Unavailable("4KHDHub is unavailable".to_string())
                 })?;
-                fourk.details(subject_id).await
+                fourk
+                    .details(subject_id)
+                    .await
+                    .map_err(|e| ProviderError::Internal(e.to_string()))
             }
-            ProviderKind::BdixCircleFtp => {
-                self.circleftp_client.details(subject_id).await
-            }
-            ProviderKind::BdixDhakaFlix => {
-                self.dhakaflix_client.details(subject_id).await
-            }
+            ProviderKind::BdixCircleFtp => self
+                .circleftp_client
+                .details(subject_id)
+                .await
+                .map_err(|e| ProviderError::Internal(e.to_string())),
+            ProviderKind::BdixDhakaFlix => self
+                .dhakaflix_client
+                .details(subject_id)
+                .await
+                .map_err(|e| ProviderError::Internal(e.to_string())),
             ProviderKind::Addons => self.addon_client.details(subject_id).await,
         }
     }
