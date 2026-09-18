@@ -1,7 +1,8 @@
 //! Cryptographic signatures and header generation for MovieBox API requests.
 
 use base64::Engine;
-use hmac::{Hmac, KeyInit, Mac};
+use hmac::digest::KeyInit;
+use hmac::{Hmac, Mac};
 use md5::{Digest, Md5};
 use std::collections::BTreeMap;
 use std::time::{SystemTime, UNIX_EPOCH};
