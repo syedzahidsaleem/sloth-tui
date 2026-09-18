@@ -235,6 +235,16 @@ impl App {
             crate::tui::state::AppMode::Streaming => "streaming",
         };
         let config = crate::tui::config::Config {
+            player: crate::config::PlayerConfig {
+                preferred: self
+                    .state
+                    .default_player
+                    .clone()
+                    .unwrap_or_else(|| "mpv".to_string()),
+                custom_command: None,
+                extra_args: Vec::new(),
+            },
+            providers: crate::config::ProvidersConfig::default(),
             auto_update: self.state.auto_update,
             last_update_check: self.state.last_update_check,
             active_mode: active_mode.to_string(),
