@@ -192,3 +192,50 @@ pub async fn list(pool: &SqlitePool) -> Result<Vec<Media>, SlothError> {
 
     Ok(media_items)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::open;
+    use tempfile::NamedTempFile;
+
+    #[tokio::test]
+    async fn test_favorites_crud() {
+        let temp = NamedTempFile::new().expect("create temp file");
+        let pool = open(temp.path()).await.expect("open db");
+
+        let media = Media {
+            id: "test:fav1".to_string(),
+            provider_id: "test_provider",
+            kind: MediaType::Movie,
+            title: "Test Movie".to_string(),
+            year: Some(2026),
+            poster_url: Some("https://example.com/poster.jpg".to_string()),
+            rating: Some(8.5),
+            description: Some("A test movie".to_string()),
+            genres: vec!["Action".to_string(), "Sci-Fi".to_string()],
+            total_episodes: None,
+            total_seasons: None,
+            external_ids: ExternalIds {
+                imdb: Some("tt1234567".to_string()),
+                tmdb: Some(101),
+                ..Default::default()
+            },
+        };
+
+        assert_eq!(is_favorite(&pool, "test:fav1").await.unwrap(), false);
+
+        add(&pool, &media).await.unwrap();
+        assert_eq!(is_favorite(&pool, "test:fav1").await.unwrap(), true);
+
+        let favs = list(&pool).await.unwrap();
+        assert_eq!(favs.len(), 1);
+        assert_eq!(favs[0].id, "test:fav1");
+        assert_eq!(favs[0].title, "Test Movie");
+        assert_eq!(favs[0].genres, vec!["Action", "Sci-Fi"]);
+
+        remove(&pool, "test:fav1").await.unwrap();
+        assert_eq!(is_favorite(&pool, "test:fav1").await.unwrap(), false);
+        assert_eq!(list(&pool).await.unwrap().len(), 0);
+    }
+}
