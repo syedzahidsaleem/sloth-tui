@@ -9,6 +9,7 @@ pub mod registry;
 pub mod sports;
 
 pub use models::*;
+pub use registry::ProviderRegistry;
 
 /// Declares supported features and content domains of a provider.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
