@@ -550,7 +550,7 @@ impl App {
             }
             Action::F1SessionSelected(_session) => {}
             Action::SearchResultsReceived(results) => {
-                self.state.search_results = results;
+                self.state.anime_tab.results = results;
                 self.state.is_loading = false;
                 self.state.has_search_settled = true;
             }
