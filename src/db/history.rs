@@ -11,7 +11,7 @@ pub async fn upsert(pool: &SqlitePool, entry: &WatchEntry) -> Result<(), SlothEr
     let is_completed = entry.completed
         || entry
             .duration
-            .map_or(false, |d| d > 0.0 && (entry.resume_position / d) >= 0.85);
+            .is_some_and(|d| d > 0.0 && (entry.resume_position / d) >= 0.85);
     let completed_val: i64 = if is_completed { 1 } else { 0 };
     let season = entry.season as i64;
     let episode = entry.episode as i64;
