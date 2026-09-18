@@ -2,13 +2,13 @@
 
 use crate::tui::widgets::render_poster_placeholder;
 use crate::tui::{
-    state::{AppState, InputMode},
+    state::{AppState, HomeDeckTab, InputMode, Tab},
     theme::Theme,
 };
 use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Direction, Layout, Margin, Rect},
-    style::{Modifier, Style},
+    style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
 };
@@ -1288,7 +1288,186 @@ fn home_bottom_bar_spans(
     bar_spans
 }
 
+/// Renders the 8-tab navigation bar at the top of the terminal screen.
+pub fn render_tab_bar(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
+    if area.height == 0 || area.width == 0 {
+        return;
+    }
+    let tabs = Tab::ALL;
+    let is_compact = area.width < 80;
+    let mut spans = Vec::with_capacity(32);
+    spans.push(Span::styled(
+        " SLOTH ",
+        Style::default()
+            .fg(theme.title.fg.unwrap_or(Color::Magenta))
+            .add_modifier(Modifier::BOLD),
+    ));
+    spans.push(Span::styled(
+        "║",
+        Style::default().fg(theme.border.fg.unwrap_or(Color::DarkGray)),
+    ));
+
+    for (i, tab) in tabs.iter().enumerate() {
+        let is_active = state.active_tab == *tab;
+        let num_str = format!("{}", i + 1);
+        let title = if is_compact {
+            match tab {
+                Tab::Movies => "Mov",
+                Tab::Anime => "Ani",
+                Tab::Sports => "Spo",
+                Tab::F1 => "F1",
+                Tab::LiveTV => "TV",
+                Tab::History => "Hist",
+                Tab::Favorites => "Fav",
+                Tab::Settings => "Set",
+            }
+        } else {
+            tab.title()
+        };
+
+        if is_active {
+            spans.push(Span::styled(
+                format!(" [{}:{}] ", num_str, title),
+                Style::default()
+                    .fg(theme.tab_active)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        } else {
+            spans.push(Span::styled(
+                format!(" {}:{} ", num_str, title),
+                Style::default().fg(theme.tab_inactive),
+            ));
+        }
+
+        if i + 1 < tabs.len() {
+            spans.push(Span::styled(
+                "│",
+                Style::default().fg(theme.border.fg.unwrap_or(Color::DarkGray)),
+            ));
+        }
+    }
+
+    let block = Block::default()
+        .borders(Borders::BOTTOM)
+        .border_style(theme.border);
+    frame.render_widget(Paragraph::new(Line::from(spans)).block(block), area);
+}
+
+/// Renders a placeholder panel for upcoming tabs (Anime, Sports, F1).
+pub fn render_placeholder_tab(
+    frame: &mut Frame,
+    area: Rect,
+    tab: Tab,
+    theme: &Theme,
+    _basic_terminal: bool,
+) {
+    if area.height < 4 || area.width < 10 {
+        return;
+    }
+    let (icon, desc) = match tab {
+        Tab::Anime => ("⛩", "Anime streaming via HiAnime with Sub/Dub toggle"),
+        Tab::Sports => ("⚽", "Live Sports streaming across Football, Cricket, Basketball & more"),
+        Tab::F1 => ("🏎", "Formula 1 live weekend streaming, sessions & race countdown"),
+        _ => ("●", "Coming soon in the next update"),
+    };
+
+    let card_w = (area.width.saturating_sub(4)).min(68).max(30);
+    let card_h = (area.height.saturating_sub(2)).min(10).max(6);
+    let card_x = area.x + (area.width.saturating_sub(card_w)) / 2;
+    let card_y = area.y + (area.height.saturating_sub(card_h)) / 2;
+    let card_area = Rect {
+        x: card_x,
+        y: card_y,
+        width: card_w,
+        height: card_h,
+    };
+
+    let title = format!(" {} {} Streaming ", icon, tab.title());
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(theme.border_focus)
+        .title(title)
+        .title_style(theme.title);
+
+    let lines = vec![
+        Line::from(""),
+        Line::from(vec![
+            Span::styled(
+                format!("{} ", icon),
+                Style::default()
+                    .fg(theme.accent.fg.unwrap_or(Color::Cyan))
+                    .add_modifier(Modifier::BOLD),
+            ),
+            Span::styled(desc, theme.text),
+        ]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("● This mode is coming soon in the next update. ", theme.text_dim),
+            Span::styled("Press [1] to switch back to Movies.", Style::default().fg(theme.tab_active)),
+        ]),
+    ];
+
+    frame.render_widget(
+        Paragraph::new(lines).block(block).alignment(Alignment::Center),
+        card_area,
+    );
+}
+
 pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) {
+    let content_area = if area.height >= 8 {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(2), Constraint::Min(0)])
+            .split(area);
+        render_tab_bar(frame, chunks[0], state, theme);
+        chunks[1]
+    } else {
+        area
+    };
+
+    match state.active_tab {
+        Tab::Anime | Tab::Sports | Tab::F1 => {
+            render_placeholder_tab(
+                frame,
+                content_area,
+                state.active_tab,
+                theme,
+                state.basic_terminal,
+            );
+            if state.show_settings_popup {
+                crate::tui::widgets::render_settings_modal(
+                    frame,
+                    area,
+                    state,
+                    theme,
+                    state.basic_terminal,
+                );
+            }
+            return;
+        }
+        Tab::LiveTV => {
+            state.is_tv_mode = true;
+        }
+        Tab::Favorites => {
+            state.is_tv_mode = false;
+            state.home_deck_tab = HomeDeckTab::Favorites;
+        }
+        Tab::History => {
+            state.is_tv_mode = false;
+            state.home_deck_tab = HomeDeckTab::ContinueWatching;
+        }
+        Tab::Settings => {
+            state.show_settings_popup = true;
+        }
+        Tab::Movies => {
+            state.is_tv_mode = false;
+        }
+    }
+
+    draw_content(frame, content_area, state, theme);
+}
+
+fn draw_content(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) {
     let view = search_view_state(state);
     let search_bar_area;
 
