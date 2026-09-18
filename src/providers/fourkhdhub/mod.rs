@@ -8,8 +8,8 @@ pub use client::{FourKHdHubClient, FourKHdHubError};
 
 use async_trait::async_trait;
 use crate::providers::models::{
-    CatalogItem, EpisodeRef, Media, MediaDetails, MediaType, ProviderError, ProviderKind, Quality,
-    Release, StreamUrl,
+    CatalogItem, EpisodeRef, Media, MediaType, ProviderError, ProviderKind, Quality, Release,
+    StreamUrl,
 };
 use crate::providers::{Provider, ProviderCapabilities, ReleaseProvider};
 
@@ -72,11 +72,13 @@ impl Provider for FourKHdHubClient {
         let releases = self.episode_streams(&media.id, season, ep_num).await?;
         let mut urls = Vec::new();
         for rel in releases {
+            let quality = Quality::from_resolution(rel.resolution_u64());
             for m in rel.mirrors {
+                let is_hls = m.resolver_url.contains(".m3u8");
                 urls.push(StreamUrl {
                     url: m.resolver_url,
-                    quality: Quality::from_resolution(rel.resolution_u64()),
-                    is_hls: m.resolver_url.contains(".m3u8"),
+                    quality,
+                    is_hls,
                     headers: m.headers,
                     subtitle_url: None,
                     provider_id: "fourkhdhub",
@@ -107,6 +109,7 @@ impl FourKHdHubClient {
     }
 }
 
+#[async_trait]
 impl ReleaseProvider for FourKHdHubClient {
     async fn episode_streams(
         &self,
