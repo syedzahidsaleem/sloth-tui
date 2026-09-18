@@ -490,6 +490,71 @@ impl App {
             | Action::CancelDownload => {
                 self.handle_download(action).await;
             }
+
+            Action::SwitchTab(tab) => {
+                self.state.active_tab = tab;
+                match tab {
+                    crate::tui::state::Tab::LiveTV => {
+                        self.state.is_tv_mode = true;
+                    }
+                    crate::tui::state::Tab::Favorites => {
+                        self.state.is_tv_mode = false;
+                        self.state.home_deck_tab = crate::tui::state::HomeDeckTab::Favorites;
+                        self.state.favorites_focus = true;
+                    }
+                    crate::tui::state::Tab::History => {
+                        self.state.is_tv_mode = false;
+                        self.state.home_deck_tab = crate::tui::state::HomeDeckTab::ContinueWatching;
+                        self.state.favorites_focus = true;
+                    }
+                    crate::tui::state::Tab::Settings => {
+                        self.state.show_settings_popup = true;
+                    }
+                    crate::tui::state::Tab::Movies => {
+                        self.state.is_tv_mode = false;
+                    }
+                    _ => {
+                        self.state.is_tv_mode = false;
+                    }
+                }
+            }
+            Action::AnimeSubDubToggle => {
+                self.state.anime_tab.is_dub = !self.state.anime_tab.is_dub;
+            }
+            Action::AnimeScheduleLoad => {}
+            Action::AnimeScheduleReceived(schedule) => {
+                self.state.anime_tab.airing_schedule = schedule;
+            }
+            Action::SportSelected(sport) => {
+                if let Some(pos) = self.state.sports_tab.sports.iter().position(|s| s == &sport) {
+                    self.state.sports_tab.selected_sport_idx = pos;
+                }
+            }
+            Action::MatchListReceived(matches) => {
+                self.state.sports_tab.matches = matches;
+            }
+            Action::MatchSelected(id) => {
+                if let Some(pos) = self.state.sports_tab.matches.iter().position(|m| m.id == id) {
+                    self.state.sports_tab.selected_match_idx = pos;
+                }
+            }
+            Action::StreamListReceived(streams) => {
+                self.state.sports_tab.streams = streams;
+            }
+            Action::F1CalendarLoad => {
+                self.state.f1_tab.loading = true;
+            }
+            Action::F1CalendarReceived(cal) => {
+                self.state.f1_tab.loading = false;
+                self.state.f1_tab.calendar = cal;
+            }
+            Action::F1SessionSelected(_session) => {}
+            Action::SearchResultsReceived(results) => {
+                self.state.search_results = results;
+                self.state.is_loading = false;
+                self.state.has_search_settled = true;
+            }
+            Action::ResumePosition(_pos) => {}
         }
         None
     }
