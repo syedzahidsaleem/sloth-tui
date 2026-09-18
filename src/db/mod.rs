@@ -86,3 +86,16 @@ pub async fn open(path: &Path) -> Result<SqlitePool, SlothError> {
 
     Ok(pool)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_init_db() {
+        let pool = open(Path::new("sloth.db"))
+            .await
+            .expect("failed to open/migrate sloth.db");
+        assert!(pool.is_closed() == false);
+    }
+}
