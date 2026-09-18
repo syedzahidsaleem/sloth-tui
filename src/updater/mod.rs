@@ -22,8 +22,96 @@ pub enum SelfUpdateOutcome {
     RequiresManualUpgrade(String),
 }
 
+/// Artifact detection and platform environment utilities.
+pub mod artifact {
+    pub const TERMUX_PREFIX_USR: &str = "/data/data/com.termux/files/usr";
+
+    /// Detects whether the current process is running inside an Android / Termux environment.
+    pub fn is_termux_environment() -> bool {
+        cfg!(target_os = "android")
+            || std::env::var("TERMUX_VERSION").is_ok()
+            || std::env::var("PREFIX").is_ok_and(|p| p.contains("com.termux"))
+            || std::path::Path::new(TERMUX_PREFIX_USR).exists()
+    }
+}
+
+/// Update apply and installation environment detection.
+pub mod apply {
+    use std::path::Path;
+
+    /// Installation environment categories.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum InstallationEnvironment {
+        DirectReplace,
+        Homebrew,
+        Termux,
+        Flatpak,
+        Snap,
+        ReadOnly,
+        WindowsHelper,
+    }
+
+    impl InstallationEnvironment {
+        /// Checks if the installation is managed by a system package manager that should notify the user.
+        pub fn has_managed_notice(&self) -> bool {
+            !matches!(self, Self::DirectReplace | Self::WindowsHelper)
+        }
+    }
+
+    /// Detects whether the executable path belongs to a Homebrew prefix.
+    pub fn is_homebrew_managed(exe_path: &Path) -> bool {
+        let s = exe_path.to_string_lossy();
+        s.contains("/Cellar/")
+            || s.contains("/opt/homebrew/")
+            || s.contains("/usr/local/Cellar/")
+            || s.contains("/home/linuxbrew/.linuxbrew/Cellar/")
+    }
+
+    /// Detects the target environment for the given executable path.
+    pub fn detect_environment(exe_path: &Path) -> InstallationEnvironment {
+        if std::env::var_os("FLATPAK_ID").is_some() || Path::new("/.flatpak-info").exists() {
+            return InstallationEnvironment::Flatpak;
+        }
+
+        if std::env::var_os("SNAP").is_some() {
+            return InstallationEnvironment::Snap;
+        }
+
+        if super::artifact::is_termux_environment() {
+            return InstallationEnvironment::Termux;
+        }
+
+        if is_homebrew_managed(exe_path) {
+            return InstallationEnvironment::Homebrew;
+        }
+
+        if cfg!(windows) {
+            return InstallationEnvironment::WindowsHelper;
+        }
+
+        InstallationEnvironment::DirectReplace
+    }
+}
+
+/// Release check utilities.
+pub mod check {
+    pub const OWNER: &str = "syedzahidsaleem";
+    pub const REPOSITORY: &str = "sloth-tui";
+
+    /// Formats the GitHub releases tag URL.
+    pub fn release_tag_url(tag: &str) -> String {
+        let tag_clean = tag.trim_start_matches('v');
+        format!("https://github.com/{OWNER}/{REPOSITORY}/releases/tag/v{tag_clean}")
+    }
+}
+
 /// Checks GitHub releases for available application updates.
 pub async fn check() -> Result<Option<Release>, String> {
+    Ok(None)
+}
+
+/// Checks if a newer release is available compared to the current version.
+pub async fn check_release(_current: &str) -> Result<Option<Release>, String> {
     Ok(None)
 }
 
