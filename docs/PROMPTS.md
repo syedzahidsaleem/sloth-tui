@@ -7,12 +7,16 @@
 
 ---
 
-## ⚠️ CRITICAL IDENTITY RULE — READ BEFORE RUNNING ANY PROMPT
+## ⚠️ CRITICAL IDENTITY & CONTRIBUTIONS RULE — READ BEFORE RUNNING ANY PROMPT
 
-> **GitHub username: `syedzahidsaleem` — this is the ONLY permitted username.**
+> **GitHub username: `syedzahidsaleem` — this is the ONLY permitted username.**  
+> **Commit Author Email: `syedzahidsaleem2@gmail.com` — verified GitHub email.**
 >
 > - Repository: `https://github.com/syedzahidsaleem/sloth-tui.git`
 > - **NEVER use `syedzahid0307`** — not in remotes, not in CI YAMLs, not in links, not anywhere.
+> - **Ensure git author is set correctly** so contributions register on your GitHub profile:
+>   `git config user.name "syedzahidsaleem"`
+>   `git config user.email "syedzahidsaleem2@gmail.com"`
 > - Before every `git push`, run `git remote -v` and confirm the URL shows `syedzahidsaleem`.
 > - If it shows any other username, run: `git remote set-url origin https://github.com/syedzahidsaleem/sloth-tui.git`
 
@@ -24,7 +28,7 @@
 > git commit -m "type(scope): what changed in this file"
 > git push origin main
 > ```
-> One file = one commit = one push. Do not accumulate. Do not batch. Push immediately.
+> One file = one commit = one push. Do not accumulate. Do not batch. Push immediately. This ensures your commit count and contribution graph increase significantly with every single step!
 
 ---
 
