@@ -181,3 +181,50 @@ pub async fn mark_completed(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::open;
+    use tempfile::NamedTempFile;
+
+    #[tokio::test]
+    async fn test_history_crud() {
+        let temp = NamedTempFile::new().expect("create temp file");
+        let pool = open(temp.path()).await.expect("open db");
+
+        let entry = WatchEntry {
+            media_id: "test:movie1".to_string(),
+            season: 0,
+            episode: 0,
+            episode_title: Some("Pilot".to_string()),
+            resume_position: 50.0,
+            duration: Some(100.0),
+            completed: false,
+            source_provider: Some("test_provider".to_string()),
+            quality: Some("1080p".to_string()),
+        };
+
+        upsert(&pool, &entry).await.expect("upsert watch entry");
+
+        let pos = get_resume_position(&pool, "test:movie1", 0, 0).await;
+        assert_eq!(pos, Some(50.0));
+
+        let recents = recent(&pool, 10).await.expect("query recent");
+        assert_eq!(recents.len(), 1);
+        assert_eq!(recents[0].media_id, "test:movie1");
+
+        let in_progress = continue_watching(&pool)
+            .await
+            .expect("query continue watching");
+        assert_eq!(in_progress.len(), 1);
+
+        mark_completed(&pool, "test:movie1", 0, 0)
+            .await
+            .expect("mark completed");
+        let in_progress_after = continue_watching(&pool)
+            .await
+            .expect("query continue watching after completion");
+        assert_eq!(in_progress_after.len(), 0);
+    }
+}
