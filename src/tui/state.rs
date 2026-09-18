@@ -110,7 +110,7 @@ impl Tab {
 }
 
 /// Column focus inside the Sports tab.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum SportsColumnFocus {
     #[default]
     Sports,
