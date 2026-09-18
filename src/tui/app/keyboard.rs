@@ -812,15 +812,28 @@ impl App {
                             self.action_sender.send(Action::MoveDown).ok();
                         }
                         KeyCode::Left => {
-                            self.action_sender.send(Action::MoveLeft).ok();
+                            if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                self.state.sports_tab.focus = self.state.sports_tab.focus.previous();
+                            } else {
+                                self.action_sender.send(Action::MoveLeft).ok();
+                            }
                         }
                         KeyCode::Right => {
-                            self.action_sender.send(Action::MoveRight).ok();
-                        }
-                        KeyCode::Tab | KeyCode::BackTab => {
-                            if self.state.landing_deck_visible() {
-                                self.state.cycle_home_deck_tab();
+                            if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                self.state.sports_tab.focus = self.state.sports_tab.focus.next();
+                            } else {
+                                self.action_sender.send(Action::MoveRight).ok();
                             }
+                        }
+                        KeyCode::Tab => {
+                            self.action_sender
+                                .send(Action::SwitchTab(self.state.active_tab.next()))
+                                .ok();
+                        }
+                        KeyCode::BackTab => {
+                            self.action_sender
+                                .send(Action::SwitchTab(self.state.active_tab.previous()))
+                                .ok();
                         }
                         KeyCode::Home | KeyCode::Char('g') => {
                             if self.state.favorites_focus {
@@ -1060,6 +1073,22 @@ impl App {
                             } else {
                                 self.resume_history_playback();
                             }
+                        }
+                        KeyCode::Char(c @ '1'..='8') => {
+                            let idx = (c as u8 - b'1') as usize;
+                            self.action_sender
+                                .send(Action::SwitchTab(crate::tui::state::Tab::from_index(idx)))
+                                .ok();
+                        }
+                        KeyCode::Char('h') | KeyCode::Char('H')
+                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
+                        {
+                            self.state.sports_tab.focus = self.state.sports_tab.focus.previous();
+                        }
+                        KeyCode::Char('l') | KeyCode::Char('L')
+                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
+                        {
+                            self.state.sports_tab.focus = self.state.sports_tab.focus.next();
                         }
                         KeyCode::Char(c)
                             if (key.modifiers.is_empty()
@@ -1685,5 +1714,43 @@ mod tests {
         app.handle_key(KeyEvent::new(KeyCode::Char('i'), KeyModifiers::empty()))
             .await;
         assert!(!app.state.show_overview_modal);
+    }
+
+    #[tokio::test]
+    async fn test_tab_switching_keys() {
+        let mut app = App::new();
+        app.state.active_screen = crate::tui::state::Screen::Home;
+        app.state.input_mode = InputMode::Normal;
+
+        // Number keys 1-8
+        for i in 1..=8 {
+            let ch = char::from_digit(i, 10).unwrap();
+            app.handle_key(KeyEvent::new(KeyCode::Char(ch), KeyModifiers::empty()))
+                .await;
+            let action = app.action_receiver.try_recv().ok();
+            assert_eq!(
+                action,
+                Some(Action::SwitchTab(crate::tui::state::Tab::from_index((i - 1) as usize)))
+            );
+        }
+
+        // Tab cycling
+        app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::empty()))
+            .await;
+        let action = app.action_receiver.try_recv().ok();
+        assert_eq!(action, Some(Action::SwitchTab(crate::tui::state::Tab::Anime)));
+
+        // Sports h / l column switching
+        app.state.active_tab = crate::tui::state::Tab::Sports;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Sports);
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Matches);
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Streams);
+        app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Matches);
     }
 }
