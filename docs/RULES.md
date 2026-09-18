@@ -215,13 +215,18 @@ The only acceptable exception is during a `cargo check` / `cargo build` fix loop
 
 ---
 
-## R20. GitHub Identity — HARD RULE
+## R20. GitHub Identity & Contributions — HARD RULE
 
 **The one and only GitHub username for this project is: `syedzahidsaleem`**
+**The verified GitHub email for contributions is: `syedzahidsaleem2@gmail.com`**
+
+> ### ⚠️ Critical for GitHub Contributions
+> GitHub only records contributions on your profile graph when the commit author/committer email matches a verified email on your GitHub account (`syedzahidsaleem2@gmail.com`). Commits made with any other email will NOT count as contributions.
 
 This applies to **every** git and GitHub operation:
 - Repository owner: `syedzahidsaleem/sloth-tui`
 - Remote URL: `https://github.com/syedzahidsaleem/sloth-tui.git`
+- Git commit author: `syedzahidsaleem <syedzahidsaleem2@gmail.com>`
 - Creating the repository (via `gh repo create` or GitHub UI)
 - Pushing branches and tags
 - Opening pull requests
@@ -231,8 +236,10 @@ This applies to **every** git and GitHub operation:
 
 **NEVER use the username `syedzahid0307` for anything in this project.** If any command, config file, CI YAML, git remote URL, or GitHub API call contains `syedzahid0307`, it is **wrong** and must be corrected immediately.
 
-Verification — run this before any git push:
+Verification — run this before committing and pushing:
 ```bash
+git config user.name "syedzahidsaleem"
+git config user.email "syedzahidsaleem2@gmail.com"
 git remote -v
 # Must show: origin  https://github.com/syedzahidsaleem/sloth-tui.git (fetch)
 # Must show: origin  https://github.com/syedzahidsaleem/sloth-tui.git (push)
@@ -242,3 +249,4 @@ If the remote shows any other username, fix it immediately:
 ```bash
 git remote set-url origin https://github.com/syedzahidsaleem/sloth-tui.git
 ```
+
