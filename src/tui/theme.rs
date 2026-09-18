@@ -106,6 +106,12 @@ pub struct Theme {
     pub mantle: Style,
     pub crust: Style,
     pub is_light: bool,
+    pub bg: Color,
+    pub bg_elevated: Color,
+    pub bg_surface: Color,
+    pub text_muted: Color,
+    pub tab_active: Color,
+    pub tab_inactive: Color,
 }
 
 impl Default for Theme {
@@ -239,6 +245,12 @@ impl Theme {
             mantle: Style::default().fg(cp(24, 24, 37)),
             crust: Style::default().fg(cp(17, 17, 27)),
             is_light: false,
+            bg: cp(30, 30, 46),
+            bg_elevated: cp(36, 36, 54),
+            bg_surface: cp(49, 50, 68),
+            text_muted: cp(108, 112, 134),
+            tab_active: cp(137, 180, 250),
+            tab_inactive: cp(108, 112, 134),
         }
     }
 
@@ -283,6 +295,12 @@ impl Theme {
             mantle: Style::default().fg(cp(230, 233, 239)),
             crust: Style::default().fg(cp(220, 224, 232)),
             is_light: true,
+            bg: cp(239, 241, 245),
+            bg_elevated: cp(230, 233, 239),
+            bg_surface: cp(204, 208, 218),
+            text_muted: cp(108, 111, 133),
+            tab_active: cp(20, 80, 200),
+            tab_inactive: cp(108, 111, 133),
         }
     }
 
@@ -392,6 +410,12 @@ impl Theme {
         self.overlay2 = quantize_style(self.overlay2);
         self.mantle = quantize_style(self.mantle);
         self.crust = quantize_style(self.crust);
+        self.bg = to_indexed_256(self.bg);
+        self.bg_elevated = to_indexed_256(self.bg_elevated);
+        self.bg_surface = to_indexed_256(self.bg_surface);
+        self.text_muted = to_indexed_256(self.text_muted);
+        self.tab_active = to_indexed_256(self.tab_active);
+        self.tab_inactive = to_indexed_256(self.tab_inactive);
         self
     }
 
@@ -434,6 +458,12 @@ impl Theme {
             mantle: Style::default().fg(foreground),
             crust: Style::default().fg(foreground),
             is_light,
+            bg: Color::Reset,
+            bg_elevated: Color::Reset,
+            bg_surface: Color::Reset,
+            text_muted: Color::DarkGray,
+            tab_active: foreground,
+            tab_inactive: Color::DarkGray,
         }
     }
 
@@ -525,6 +555,12 @@ impl Theme {
             mantle: Style::default().fg(Color::Black),
             crust: Style::default().fg(Color::Black),
             is_light: false,
+            bg: Color::Black,
+            bg_elevated: Color::Black,
+            bg_surface: Color::DarkGray,
+            text_muted: Color::DarkGray,
+            tab_active: Color::Cyan,
+            tab_inactive: Color::DarkGray,
         }
     }
 
@@ -569,6 +605,12 @@ impl Theme {
             mantle: Style::default().fg(cp(30, 32, 48)),
             crust: Style::default().fg(cp(24, 25, 38)),
             is_light: false,
+            bg: cp(36, 39, 58),
+            bg_elevated: cp(42, 45, 66),
+            bg_surface: cp(54, 58, 79),
+            text_muted: cp(110, 115, 141),
+            tab_active: cp(138, 173, 244),
+            tab_inactive: cp(110, 115, 141),
         }
     }
 
@@ -613,6 +655,12 @@ impl Theme {
             mantle: Style::default().fg(cp(41, 44, 60)),
             crust: Style::default().fg(cp(35, 38, 52)),
             is_light: false,
+            bg: cp(48, 52, 70),
+            bg_elevated: cp(55, 59, 79),
+            bg_surface: cp(65, 69, 89),
+            text_muted: cp(115, 121, 148),
+            tab_active: cp(140, 170, 238),
+            tab_inactive: cp(115, 121, 148),
         }
     }
 
@@ -657,6 +705,12 @@ impl Theme {
             mantle: Style::default().fg(cp(40, 45, 56)),
             crust: Style::default().fg(cp(36, 40, 50)),
             is_light: false,
+            bg: cp(46, 52, 64),
+            bg_elevated: cp(59, 66, 82),
+            bg_surface: cp(67, 76, 94),
+            text_muted: cp(144, 154, 172),
+            tab_active: cp(136, 192, 208),
+            tab_inactive: cp(144, 154, 172),
         }
     }
 
@@ -701,6 +755,12 @@ impl Theme {
             mantle: Style::default().fg(cp(22, 22, 30)),
             crust: Style::default().fg(cp(22, 22, 30)),
             is_light: false,
+            bg: cp(26, 27, 38),
+            bg_elevated: cp(31, 32, 47),
+            bg_surface: cp(41, 46, 66),
+            text_muted: cp(86, 95, 137),
+            tab_active: cp(122, 162, 247),
+            tab_inactive: cp(86, 95, 137),
         }
     }
 
@@ -745,6 +805,12 @@ impl Theme {
             mantle: Style::default().fg(cp(33, 34, 44)),
             crust: Style::default().fg(cp(25, 26, 34)),
             is_light: false,
+            bg: cp(40, 42, 54),
+            bg_elevated: cp(50, 52, 66),
+            bg_surface: cp(68, 71, 90),
+            text_muted: cp(98, 114, 164),
+            tab_active: cp(189, 147, 249),
+            tab_inactive: cp(98, 114, 164),
         }
     }
 
@@ -789,6 +855,12 @@ impl Theme {
             mantle: Style::default().fg(cp(29, 32, 33)),
             crust: Style::default().fg(cp(20, 22, 23)),
             is_light: false,
+            bg: cp(40, 40, 40),
+            bg_elevated: cp(50, 48, 47),
+            bg_surface: cp(60, 56, 54),
+            text_muted: cp(146, 131, 116),
+            tab_active: cp(250, 189, 47),
+            tab_inactive: cp(146, 131, 116),
         }
     }
 
@@ -833,6 +905,12 @@ impl Theme {
             mantle: Style::default().fg(cp(25, 23, 36)),
             crust: Style::default().fg(cp(21, 19, 30)),
             is_light: false,
+            bg: cp(25, 23, 36),
+            bg_elevated: cp(31, 29, 46),
+            bg_surface: cp(38, 35, 58),
+            text_muted: cp(110, 106, 134),
+            tab_active: cp(235, 188, 186),
+            tab_inactive: cp(110, 106, 134),
         }
     }
 }
@@ -858,6 +936,18 @@ impl Theme {
         self.mantle.fg.unwrap_or(self.base)
     }
 }
+
+/// Resolves a full Theme instance by theme string name.
+pub fn theme_by_name(name: &str) -> Theme {
+    Theme::from_kind(ThemeKind::parse(name))
+}
+
+pub const CATPPUCCIN_MOCHA: ThemeKind = ThemeKind::Mocha;
+pub const TOKYO_NIGHT: ThemeKind = ThemeKind::TokyoNight;
+pub const NORD: ThemeKind = ThemeKind::Nord;
+pub const DRACULA: ThemeKind = ThemeKind::Dracula;
+pub const GRUVBOX_DARK: ThemeKind = ThemeKind::Gruvbox;
+pub const ROSE_PINE: ThemeKind = ThemeKind::RosePine;
 
 fn cp(r: u8, g: u8, b: u8) -> Color {
     Color::Rgb(r, g, b)
