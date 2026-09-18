@@ -29,19 +29,15 @@ fn str_to_media_type(s: &str) -> MediaType {
 
 /// Adds a media item to user favorites, ensuring the media metadata is upserted first.
 pub async fn add(pool: &SqlitePool, media: &Media) -> Result<(), SlothError> {
-    let kind_str = media_type_to_str(media.kind);
+    let kind_str = media_type_to_str(media.media_type);
     let year_val = media.year.map(|y| y as i64);
     let rating_val = media.rating.map(|r| r as f64);
-    let total_episodes_val = media.total_episodes.map(|e| e as i64);
-    let total_seasons_val = media.total_seasons.map(|s| s as i64);
+    let total_episodes_val = media.episodes_count.map(|e| e as i64);
+    let total_seasons_val = media.seasons_count.map(|s| s as i64);
     let anilist_id_val = media.external_ids.anilist.map(|a| a as i64);
     let tmdb_id_val = media.external_ids.tmdb.map(|t| t as i64);
     let mal_id_val = media.external_ids.mal.map(|m| m as i64);
-    let external_id = media
-        .external_ids
-        .imdb
-        .as_deref()
-        .or(media.external_ids.trakt.as_deref());
+    let external_id = media.external_ids.imdb.as_deref();
     let genres_json = serde_json::to_string(&media.genres).unwrap_or_else(|_| "[]".to_string());
 
     // 1. Upsert into media table
@@ -76,7 +72,7 @@ pub async fn add(pool: &SqlitePool, media: &Media) -> Result<(), SlothError> {
         media.title,
         kind_str,
         year_val,
-        media.description,
+        media.overview,
         media.poster_url,
         rating_val,
         genres_json,
@@ -170,22 +166,25 @@ pub async fn list(pool: &SqlitePool) -> Result<Vec<Media>, SlothError> {
             Media {
                 id: r.id,
                 provider_id: Box::leak(r.provider_id.into_boxed_str()),
-                kind: str_to_media_type(&r.kind),
+                media_type: str_to_media_type(&r.kind),
                 title: r.title,
                 year: r.year.map(|y| y as u32),
                 poster_url: r.poster_url,
+                backdrop_url: None,
                 rating: r.rating.map(|rt| rt as f32),
-                description: r.description,
+                duration_secs: None,
+                overview: r.description,
                 genres,
-                total_episodes: r.total_episodes.map(|e| e as u32),
-                total_seasons: r.total_seasons.map(|s| s as u32),
+                episodes_count: r.total_episodes.map(|e| e as u32),
+                seasons_count: r.total_seasons.map(|s| s as u32),
                 external_ids: ExternalIds {
                     tmdb: r.tmdb_id.map(|t| t as u32),
                     anilist: r.anilist_id.map(|a| a as u32),
                     mal: r.mal_id.map(|m| m as u32),
-                    trakt: None,
+                    tvdb: None,
                     imdb: r.external_id,
                 },
+                cast: Vec::new(),
             }
         })
         .collect();
@@ -207,20 +206,23 @@ mod tests {
         let media = Media {
             id: "test:fav1".to_string(),
             provider_id: "test_provider",
-            kind: MediaType::Movie,
+            media_type: MediaType::Movie,
             title: "Test Movie".to_string(),
             year: Some(2026),
             poster_url: Some("https://example.com/poster.jpg".to_string()),
+            backdrop_url: None,
             rating: Some(8.5),
-            description: Some("A test movie".to_string()),
+            duration_secs: None,
+            overview: Some("A test movie".to_string()),
             genres: vec!["Action".to_string(), "Sci-Fi".to_string()],
-            total_episodes: None,
-            total_seasons: None,
+            episodes_count: None,
+            seasons_count: None,
             external_ids: ExternalIds {
                 imdb: Some("tt1234567".to_string()),
                 tmdb: Some(101),
                 ..Default::default()
             },
+            cast: Vec::new(),
         };
 
         assert_eq!(is_favorite(&pool, "test:fav1").await.unwrap(), false);
