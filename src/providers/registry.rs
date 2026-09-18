@@ -80,7 +80,7 @@ impl ProviderRegistry {
         media: &Media,
         episode: Option<&EpisodeRef>,
     ) -> Result<Vec<StreamUrl>, SlothError> {
-        let chain = self.chain_for(&media.kind);
+        let chain = self.chain_for(&media.media_type);
         let mut last_err = None;
 
         for provider in chain {
@@ -91,7 +91,7 @@ impl ProviderRegistry {
             match provider.resolve(media, episode).await {
                 Ok(urls) if !urls.is_empty() => return Ok(urls),
                 Ok(_) => continue,
-                Err(ProviderError::RateLimited) => continue,
+                Err(ProviderError::RateLimited(_)) => continue,
                 Err(e) => {
                     tracing::warn!(
                         provider = provider.id(),
