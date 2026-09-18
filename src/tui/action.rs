@@ -162,6 +162,19 @@ pub enum Action {
         circleftp: bool,
         dhakaflix: bool,
     },
+    SwitchTab(crate::tui::state::Tab),
+    AnimeSubDubToggle,
+    AnimeScheduleLoad,
+    AnimeScheduleReceived(Vec<crate::tui::state::AiringAnime>),
+    SportSelected(String),
+    MatchListReceived(Vec<crate::tui::state::LiveMatch>),
+    MatchSelected(String),
+    StreamListReceived(Vec<crate::tui::state::MatchStream>),
+    F1CalendarLoad,
+    F1CalendarReceived(Vec<crate::tui::state::F1Session>),
+    F1SessionSelected(Box<crate::tui::state::F1Session>),
+    SearchResultsReceived(Vec<crate::providers::models::Media>),
+    ResumePosition(f64),
 }
 
 #[cfg(test)]
