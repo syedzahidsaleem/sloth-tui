@@ -62,11 +62,16 @@ rustup target add aarch64-linux-android
 
 ## 2. Project Initialization (M1 — scaffold-agent task)
 
-> ### ⚠️ GitHub Identity — Mandatory Before Any Git Command
+> ### ⚠️ GitHub Identity & Contributions — Mandatory Before Any Git Command
 >
-> **GitHub username: `syedzahidsaleem` — ONLY this username, always.**
+> **GitHub username: `syedzahidsaleem` — ONLY this username, always.**  
+> **Commit Author Email: `syedzahidsaleem2@gmail.com` — verified GitHub email.**
 >
 > ```bash
+> # Configure git author so contributions register on your profile:
+> git config user.name "syedzahidsaleem"
+> git config user.email "syedzahidsaleem2@gmail.com"
+>
 > # Set remote correctly (if repo already exists):
 > git remote set-url origin https://github.com/syedzahidsaleem/sloth-tui.git
 >
