@@ -1435,13 +1435,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
                 state.basic_terminal,
             );
             if state.show_settings_popup {
-                crate::tui::widgets::render_settings_modal(
-                    frame,
-                    area,
-                    state,
-                    theme,
-                    state.basic_terminal,
-                );
+                crate::tui::widgets::settings::draw(frame, area, state, theme);
             }
             return;
         }
