@@ -527,6 +527,20 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
         badge_spans.push(Span::styled(imdb_rating, b_rating_s));
     }
 
+    let tmdb_rating_opt = state.selected_media.as_ref().and_then(|m| {
+        m.rating.filter(|&r| r > 0.0).map(|r| format!("{:.1}", r))
+    });
+
+    if let Some(tmdb_rating) = tmdb_rating_opt {
+        badge_spans.push(Span::styled(bullet_sep, b_sep_s));
+        if state.basic_terminal {
+            badge_spans.push(Span::styled("TMDB ", b_rating_s));
+        } else {
+            badge_spans.push(Span::styled("TMDB ★ ", b_rating_s));
+        }
+        badge_spans.push(Span::styled(tmdb_rating, b_rating_s));
+    }
+
     let audio_str = if has_languages {
         None
     } else {
@@ -599,17 +613,26 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     };
     if !details.genres.is_empty() {
         let label_w = 7;
-        let val_w = crate::tui::text::width(&genres);
+        let genre_badges: Vec<String> = details
+            .genres
+            .iter()
+            .map(|g| format!("[{g}]"))
+            .collect();
+        let genres_str = genre_badges.join(" ");
+        let val_w = crate::tui::text::width(&genres_str);
         if label_w + 4 <= text_width {
             extra_meta_spans.push(Span::styled("Genre: ", meta_lbl_s));
             let available_genre_w = text_width.saturating_sub(label_w);
             let display_genres = if val_w > available_genre_w {
-                crate::tui::text::truncate_width(&genres, available_genre_w)
+                crate::tui::text::truncate_width(&genres_str, available_genre_w)
             } else {
-                std::borrow::Cow::Borrowed(genres.as_str())
+                std::borrow::Cow::Borrowed(genres_str.as_str())
             };
             extra_meta_w += label_w + crate::tui::text::width(&display_genres);
-            extra_meta_spans.push(Span::styled(display_genres, meta_val_s));
+            extra_meta_spans.push(Span::styled(
+                display_genres,
+                if modal_active { theme.muted } else { theme.accent },
+            ));
         }
     }
     if let Some(dir) = details
@@ -639,11 +662,27 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             extra_meta_spans.push(Span::styled(display_dir, meta_val_s));
         }
     }
-    if let Some(cast) = details
-        .stars
-        .as_deref()
-        .filter(|s| !s.trim().is_empty() && *s != "N/A")
-    {
+    let cast_content = state
+        .selected_media
+        .as_ref()
+        .filter(|m| !m.cast.is_empty())
+        .map(|m| {
+            m.cast
+                .iter()
+                .take(5)
+                .map(|c| c.name.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        })
+        .or_else(|| {
+            details
+                .stars
+                .as_deref()
+                .filter(|s| !s.trim().is_empty() && *s != "N/A")
+                .map(|s| s.to_string())
+        });
+
+    if let Some(cast) = cast_content.as_deref() {
         let sep_w = if !extra_meta_spans.is_empty() {
             bullet_w
         } else {
@@ -662,6 +701,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             } else {
                 std::borrow::Cow::Borrowed(cast)
             };
+            extra_meta_w += sep_w + label_w + crate::tui::text::width(&display_cast);
             extra_meta_spans.push(Span::styled(display_cast, meta_val_s));
         }
     }
@@ -1441,6 +1481,11 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     }
     .alignment(Alignment::Center);
     frame.render_widget(footer_p, footer_area);
+
+    let tmdb_attr = Line::from(vec![
+        Span::styled("Powered by TMDB ", theme.muted.add_modifier(Modifier::DIM)),
+    ]);
+    frame.render_widget(Paragraph::new(tmdb_attr).alignment(Alignment::Right), footer_area);
 
     if state.show_overview_modal {
         crate::tui::overlay::overview_modal(
