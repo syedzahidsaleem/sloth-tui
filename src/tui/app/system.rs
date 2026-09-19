@@ -310,11 +310,37 @@ impl App {
                     self.state.settings_player_picker = false;
                     self.state.show_sources_popup = false;
                     self.state.input_mode = crate::tui::state::InputMode::Normal;
+                    self.state.anilist_auth_prompt = false;
+                    self.state.anilist_token_input = None;
+
+                    let tx = self.action_sender.clone();
+                    tokio::spawn(async move {
+                        let db_path = crate::config::db_path();
+                        if let Ok(pool) = crate::db::open(&db_path).await {
+                            if let Ok(Some(client)) =
+                                crate::tracking::AniListClient::authenticate(&pool).await
+                            {
+                                let username =
+                                    client.get_authenticated_user().await.ok().flatten();
+                                let _ = tx.send(Action::AniListAuthStatus {
+                                    authenticated: true,
+                                    username,
+                                });
+                                return;
+                            }
+                        }
+                        let _ = tx.send(Action::AniListAuthStatus {
+                            authenticated: false,
+                            username: None,
+                        });
+                    });
                 } else {
                     self.state.show_settings_popup = false;
                     self.state.settings_download_dir_input = None;
                     self.state.settings_player_picker = false;
                     self.state.show_sources_popup = false;
+                    self.state.anilist_auth_prompt = false;
+                    self.state.anilist_token_input = None;
                     self.persist_config();
                 }
             }
@@ -405,6 +431,7 @@ impl App {
                         self.state.dirty = true;
                     }
                 }
+                crate::tui::state::SettingsCategory::Accounts => {}
                 crate::tui::state::SettingsCategory::StorageInfo => {}
             },
 
@@ -606,6 +633,84 @@ impl App {
                             );
                         }
                         _ => {}
+                    }
+                }
+                crate::tui::state::SettingsCategory::Accounts => {
+                    if self.state.settings_selected_row == 0 {
+                        if self.state.anilist_auth_prompt {
+                            if let Some(input) = self.state.anilist_token_input.take() {
+                                self.state.anilist_auth_prompt = false;
+                                let token = input.as_str().trim().to_string();
+                                if !token.is_empty() {
+                                    let tx = self.action_sender.clone();
+                                    let token_clone = token.clone();
+                                    tokio::spawn(async move {
+                                        let db_path = crate::config::db_path();
+                                        if let Ok(pool) = crate::db::open(&db_path).await {
+                                            if let Ok(()) =
+                                                crate::tracking::AniListClient::store_token(
+                                                    &pool,
+                                                    &token_clone,
+                                                )
+                                                .await
+                                            {
+                                                if let Ok(Some(client)) =
+                                                    crate::tracking::AniListClient::authenticate(
+                                                        &pool,
+                                                    )
+                                                    .await
+                                                {
+                                                    let username = client
+                                                        .get_authenticated_user()
+                                                        .await
+                                                        .ok()
+                                                        .flatten();
+                                                    let _ = tx.send(Action::AniListAuthStatus {
+                                                        authenticated: true,
+                                                        username,
+                                                    });
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    });
+                                    self.state.anilist_authenticated = true;
+                                    self.state.anilist_username = Some("User".to_string());
+                                    self.state.notify(
+                                        NotificationKind::Success,
+                                        "AniList",
+                                        "AniList authorized successfully!",
+                                    );
+                                }
+                            }
+                        } else if self.state.anilist_authenticated {
+                            tokio::spawn(async move {
+                                let db_path = crate::config::db_path();
+                                if let Ok(pool) = crate::db::open(&db_path).await {
+                                    let _ = crate::tracking::AniListClient::logout(&pool).await;
+                                }
+                            });
+                            self.state.anilist_authenticated = false;
+                            self.state.anilist_username = None;
+                            self.state.notify(
+                                NotificationKind::Info,
+                                "AniList",
+                                "Logged out of AniList",
+                            );
+                        } else {
+                            let url = crate::tracking::AniListClient::login_url(
+                                crate::tracking::anilist_sync::DEFAULT_ANILIST_CLIENT_ID,
+                            );
+                            let _ = open::that(&url);
+                            self.state.anilist_auth_prompt = true;
+                            self.state.anilist_token_input =
+                                Some(crate::tui::text::TextInputBuffer::new());
+                            self.state.notify(
+                                NotificationKind::Info,
+                                "AniList Login",
+                                "Browser opened. Paste token into prompt.",
+                            );
+                        }
                     }
                 }
             },
@@ -950,6 +1055,13 @@ impl App {
                         format!("Automatically enabled: {}", found.join(", ")),
                     );
                 }
+            }
+            Action::AniListAuthStatus {
+                authenticated,
+                username,
+            } => {
+                self.state.anilist_authenticated = authenticated;
+                self.state.anilist_username = username;
             }
             _ => return None,
         }
