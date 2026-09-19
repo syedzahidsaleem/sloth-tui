@@ -220,6 +220,7 @@ impl AniListClient {
         });
 
         #[derive(serde::Deserialize)]
+        #[allow(dead_code)]
         struct SaveEntryData {
             #[serde(rename = "SaveMediaListEntry")]
             entry: Option<serde_json::Value>,
@@ -292,6 +293,7 @@ impl AniListClient {
             lists: Vec<MediaListGroup>,
         }
         #[derive(serde::Deserialize)]
+        #[allow(dead_code)]
         struct MediaListGroup {
             name: Option<String>,
             entries: Vec<RawAniListEntry>,
@@ -424,6 +426,7 @@ impl AniListClient {
             });
 
             #[derive(serde::Deserialize)]
+            #[allow(dead_code)]
             struct MutationResp {
                 #[serde(rename = "SaveMediaListEntry")]
                 entry: Option<serde_json::Value>,
