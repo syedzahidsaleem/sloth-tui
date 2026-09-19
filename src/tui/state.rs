@@ -545,6 +545,7 @@ pub struct AppState {
     pub search_list_state: TableState,
 
     pub selected_details: Option<MediaDetails>,
+    pub selected_media: Option<crate::providers::models::Media>,
     pub active_subject_id: Option<String>,
     pub selected_resources: Vec<Release>,
     pub stream_pool: std::collections::HashMap<String, SubjectStreamPool>,
@@ -728,6 +729,7 @@ impl Default for AppState {
             search_list_state: TableState::default(),
             basic_terminal: crate::tui::terminal::uses_basic_ui(),
             selected_details: None,
+            selected_media: None,
             active_subject_id: None,
             selected_resources: vec![],
             stream_pool: std::collections::HashMap::new(),
