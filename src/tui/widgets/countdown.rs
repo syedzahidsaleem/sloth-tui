@@ -55,17 +55,11 @@ impl CountdownWidget {
         let formatted = Self::format_duration(self.target, now);
 
         let style = if formatted.starts_with('●') {
-            Style::default()
-                .fg(theme.error)
-                .add_modifier(Modifier::BOLD)
+            theme.error.add_modifier(Modifier::BOLD)
         } else if self.target - now < chrono::Duration::hours(24) {
-            Style::default()
-                .fg(theme.warning)
-                .add_modifier(Modifier::BOLD)
+            theme.rating.add_modifier(Modifier::BOLD)
         } else {
-            Style::default()
-                .fg(theme.accent)
-                .add_modifier(Modifier::BOLD)
+            theme.accent.add_modifier(Modifier::BOLD)
         };
 
         if area.height == 1 {
@@ -76,22 +70,16 @@ impl CountdownWidget {
 
         let lines = if area.height >= 3 && !self.label.is_empty() {
             vec![
-                ratatui::text::Line::from(ratatui::text::Span::styled(
-                    &self.label,
-                    Style::default().fg(theme.text_dim),
-                )),
+                ratatui::text::Line::from(ratatui::text::Span::styled(&self.label, theme.text_dim)),
                 ratatui::text::Line::from(ratatui::text::Span::styled(formatted, style)),
                 ratatui::text::Line::from(ratatui::text::Span::styled(
                     "████████████████████░░░░░░░░░░░",
-                    Style::default().fg(theme.accent),
+                    theme.accent,
                 )),
             ]
         } else if !self.label.is_empty() {
             vec![
-                ratatui::text::Line::from(ratatui::text::Span::styled(
-                    &self.label,
-                    Style::default().fg(theme.text_dim),
-                )),
+                ratatui::text::Line::from(ratatui::text::Span::styled(&self.label, theme.text_dim)),
                 ratatui::text::Line::from(ratatui::text::Span::styled(formatted, style)),
             ]
         } else {
