@@ -213,6 +213,14 @@ pub struct AiringAnime {
     pub airing_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
+/// Active focus panel within the Anime tab.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum AnimePanelFocus {
+    #[default]
+    Results,
+    Episodes,
+}
+
 /// State machine for the Anime tab.
 #[derive(Debug, Clone, Default)]
 pub struct AnimeTabState {
@@ -221,6 +229,24 @@ pub struct AnimeTabState {
     pub is_dub: bool,
     pub airing_schedule: Vec<AiringAnime>,
     pub schedule_visible: bool,
+    pub episodes: Vec<crate::providers::models::EpisodeRef>,
+    pub selected_episode_idx: usize,
+    pub focus: AnimePanelFocus,
+    pub selected_media: Option<crate::providers::models::Media>,
+}
+
+impl AnimeTabState {
+    /// Returns the currently selected anime from search results.
+    pub fn selected_anime(&self) -> Option<&crate::providers::models::Media> {
+        self.selected_media
+            .as_ref()
+            .or_else(|| self.results.get(self.selected_idx))
+    }
+
+    /// Returns the currently selected episode within the episode listing.
+    pub fn selected_episode(&self) -> Option<&crate::providers::models::EpisodeRef> {
+        self.episodes.get(self.selected_episode_idx)
+    }
 }
 
 /// State machine for the Sports tab.
