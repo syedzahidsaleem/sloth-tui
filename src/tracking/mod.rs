@@ -1,8 +1,10 @@
 //! Watch progress tracking and scrobbling services (Trakt.tv, AniList).
 
 pub mod anilist_sync;
+pub mod discord_rpc;
 
 pub use anilist_sync::{AniListClient, AniListEntry};
+pub use discord_rpc::DiscordRpc;
 
 use crate::SlothError;
 
