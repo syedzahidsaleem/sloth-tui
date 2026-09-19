@@ -1,0 +1,12 @@
+{
+  "data": {
+    "episode": {
+      "sourceUrls": [
+        {
+          "sourceUrl": "https://fast4speed.net/stream/onepiece-ep1.m3u8",
+          "priority": 1.0
+        }
+      ]
+    }
+  }
+}
