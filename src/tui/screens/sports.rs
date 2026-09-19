@@ -468,3 +468,79 @@ fn render_bottom_bar(frame: &mut Frame, area: Rect, theme: &Theme) {
     let bar = Paragraph::new(shortcuts).alignment(Alignment::Center);
     frame.render_widget(bar, area);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::backend::TestBackend;
+    use ratatui::Terminal;
+
+    #[test]
+    fn test_sports_screen_renders_without_panic() {
+        let backend = TestBackend::new(120, 35);
+        let mut terminal = Terminal::new(backend).expect("terminal");
+
+        let mut state = SportsTabState::default();
+        state.matches.push(LiveMatch {
+            id: "match-1".to_string(),
+            title: "Arsenal vs Chelsea".to_string(),
+            category: "football".to_string(),
+            teams: Some(("Arsenal".to_string(), "Chelsea".to_string())),
+            competition: Some("Premier League".to_string()),
+            starts_at: Some(chrono::Utc::now()),
+            is_popular: true,
+            poster: None,
+            streams: Vec::new(),
+        });
+        state.streams.push(MatchStream {
+            id: "stream-1".to_string(),
+            hd_url: Some("https://streamed.su/hd.m3u8".to_string()),
+            sd_url: None,
+            embed_url: None,
+            language: Some("English".to_string()),
+        });
+
+        let theme = Theme::mocha();
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                render(frame, area, &state, &theme);
+            })
+            .expect("draw");
+
+        let buffer = terminal.backend().buffer();
+        let content = buffer
+            .content()
+            .iter()
+            .map(|c| c.symbol())
+            .collect::<String>();
+
+        assert!(content.contains("Sports"));
+        assert!(content.contains("Football"));
+        assert!(content.contains("Arsenal vs Chelsea"));
+        assert!(content.contains("Premier League"));
+        assert!(content.contains("English"));
+    }
+
+    #[test]
+    fn test_sports_column_focus_switching() {
+        let backend = TestBackend::new(100, 30);
+        let mut terminal = Terminal::new(backend).expect("terminal");
+
+        let mut state = SportsTabState::default();
+        let theme = Theme::mocha();
+
+        for focus in [
+            SportsColumnFocus::Sports,
+            SportsColumnFocus::Matches,
+            SportsColumnFocus::Streams,
+        ] {
+            state.focus = focus;
+            terminal
+                .draw(|frame| {
+                    render(frame, frame.area(), &state, &theme);
+                })
+                .expect("draw should succeed for each column focus");
+        }
+    }
+}
