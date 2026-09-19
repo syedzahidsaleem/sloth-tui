@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use ratatui::buffer::Buffer;
 use ratatui::layout::{Alignment, Rect};
-use ratatui::style::{Modifier, Style};
+use ratatui::style::Modifier;
 use ratatui::widgets::{Paragraph, Widget};
 
 use crate::tui::theme::Theme;
