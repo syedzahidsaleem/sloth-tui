@@ -92,12 +92,12 @@ pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
                 .get(SPORTS_M3U_URL)
                 .send()
                 .await
-                .map_err(|e| SlothError::Provider(format!("Failed to download F1 streams: {e}")))?;
+                .map_err(|e| SlothError::Provider(ProviderError::Network(format!("Failed to download F1 streams: {e}"))))?;
 
             let text = resp
                 .text()
                 .await
-                .map_err(|e| SlothError::Provider(format!("Failed to read F1 streams playlist: {e}")))?;
+                .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to read F1 streams playlist: {e}"))))?;
 
             Ok(parse_f1_m3u(&text))
         }
