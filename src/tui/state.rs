@@ -446,7 +446,7 @@ impl SettingsCategory {
 
     pub fn row_count(self) -> usize {
         match self {
-            Self::General => 3,
+            Self::General => 4,
             Self::ContentModes => 3,
             Self::Appearance => 1,
             Self::Accounts => 1,
@@ -638,6 +638,7 @@ pub struct AppState {
     pub notifications: std::collections::VecDeque<crate::tui::overlay::Notification>,
     pub update_available: Option<(String, String)>,
     pub auto_update: bool,
+    pub discord_rpc_enabled: bool,
     pub last_update_check: u64,
     pub manual_update_check: bool,
     pub is_checking_updates: bool,
@@ -820,6 +821,7 @@ impl Default for AppState {
             notifications: std::collections::VecDeque::new(),
             update_available: None,
             auto_update: true,
+            discord_rpc_enabled: true,
             last_update_check: 0,
             manual_update_check: false,
             is_checking_updates: false,
