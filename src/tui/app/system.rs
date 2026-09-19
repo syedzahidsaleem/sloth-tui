@@ -651,6 +651,7 @@ impl App {
                                                 crate::tracking::AniListClient::store_token(
                                                     &pool,
                                                     &token_clone,
+                                                    None,
                                                 )
                                                 .await
                                             {
