@@ -1426,7 +1426,14 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     };
 
     match state.active_tab {
-        Tab::Anime | Tab::Sports | Tab::F1 => {
+        Tab::Anime => {
+            crate::tui::screens::anime::render(frame, content_area, &state.anime_tab, theme);
+            if state.show_settings_popup {
+                crate::tui::widgets::settings::draw(frame, area, state, theme);
+            }
+            return;
+        }
+        Tab::Sports | Tab::F1 => {
             render_placeholder_tab(
                 frame,
                 content_area,
