@@ -1,4 +1,4 @@
-use sloth_tui::metadata::tmdb::{TmdbClient, TmdbMovie, TmdbMovieResult, TmdbTv, TmdbTvResult};
+use sloth_tui::metadata::tmdb::{TmdbClient, TmdbMovie, TmdbTv};
 use sloth_tui::providers::models::{CastMember, ExternalIds, Media, MediaDetails, MediaType, ProviderMediaId};
 use sloth_tui::providers::models::ProviderKind;
 use sloth_tui::tui::screens::details;
