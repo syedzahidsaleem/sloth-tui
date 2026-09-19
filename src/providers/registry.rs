@@ -9,6 +9,7 @@ use crate::config::Config;
 use crate::providers::Provider;
 use crate::providers::anime::{AllAnimeProvider, HiAnimeProvider};
 use crate::providers::models::{EpisodeRef, Media, MediaType, ProviderError, StreamUrl};
+use crate::providers::sports::StreamedProvider;
 
 /// Registry managing active providers, prioritized fallback chains, and health state.
 pub struct ProviderRegistry {
@@ -36,7 +37,7 @@ impl ProviderRegistry {
                 Arc::new(HiAnimeProvider::new()),
                 Arc::new(AllAnimeProvider::new()),
             ],
-            sports_chain: Vec::new(),
+            sports_chain: vec![Arc::new(StreamedProvider::new())],
             f1_chain: Vec::new(),
             tv_chain: Vec::new(),
             health: Arc::new(RwLock::new(HashMap::new())),
