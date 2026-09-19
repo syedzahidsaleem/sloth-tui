@@ -1,5 +1,9 @@
 //! Watch progress tracking and scrobbling services (Trakt.tv, AniList).
 
+pub mod anilist_sync;
+
+pub use anilist_sync::{AniListClient, AniListEntry};
+
 use crate::SlothError;
 
 /// Synchronizes watch progress with Trakt.tv.
@@ -24,5 +28,16 @@ pub async fn sync_anilist(
     tracing::info!(
         "AniList scrobble sync: media={media_id}, episode={episode}, pos={progress_secs:.1}s"
     );
+
+    if let Ok(pool) = crate::db::open(&crate::config::db_path()).await {
+        if let Ok(Some(client)) = AniListClient::authenticate(&pool).await {
+            if let Ok(anilist_id) = media_id.parse::<u32>() {
+                let _ = client
+                    .mark_episode_watched_with_pool(Some(&pool), anilist_id, episode)
+                    .await;
+            }
+        }
+    }
+
     Ok(())
 }
