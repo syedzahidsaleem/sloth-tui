@@ -949,29 +949,23 @@ impl App {
                 self.state.active_subject_id = Some(id.clone());
                 self.state.selected_details = Some(details.clone());
 
-                let media_for_enrichment = self
-                    .state
-                    .search_results
-                    .iter()
-                    .find(|r| r.id == id)
-                    .cloned()
-                    .unwrap_or_else(|| crate::providers::models::Media {
-                        id: details.id.value.clone(),
-                        title: details.title.clone(),
-                        media_type: details.media_type,
-                        year: details.year.as_deref().and_then(|y| y.parse::<u32>().ok()),
-                        overview: details.description.clone(),
-                        poster_url: details.cover_url().map(|s| s.to_string()),
-                        backdrop_url: None,
-                        genres: details.genres.clone(),
-                        rating: details.imdb_rating.as_deref().and_then(|r| r.parse::<f32>().ok()),
-                        duration_secs: None,
-                        seasons_count: None,
-                        episodes_count: None,
-                        provider_id: details.id.provider.cache_key(),
-                        external_ids: Default::default(),
-                        cast: vec![],
-                    });
+                let media_for_enrichment = crate::providers::models::Media {
+                    id: details.id.value.clone(),
+                    title: details.title.clone(),
+                    media_type: details.media_type,
+                    year: details.year.as_deref().and_then(|y| y.parse::<u32>().ok()),
+                    overview: details.description.clone(),
+                    poster_url: details.cover_url().map(|s| s.to_string()),
+                    backdrop_url: None,
+                    genres: details.genres.clone(),
+                    rating: details.imdb_rating.as_deref().and_then(|r| r.parse::<f32>().ok()),
+                    duration_secs: None,
+                    seasons_count: None,
+                    episodes_count: None,
+                    provider_id: details.id.provider.cache_key(),
+                    external_ids: Default::default(),
+                    cast: vec![],
+                };
 
                 let enrich_tx = self.action_sender.clone();
                 tokio::spawn(async move {
