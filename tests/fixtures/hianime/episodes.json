@@ -1,0 +1,22 @@
+{
+  "data": {
+    "totalEpisodes": 220,
+    "episodes": [
+      {
+        "episodeId": "naruto-677?ep=1233",
+        "number": 1,
+        "title": "Enter: Naruto Uzumaki!"
+      },
+      {
+        "episodeId": "naruto-677?ep=1234",
+        "number": 2,
+        "title": "My Name is Konohamaru!"
+      },
+      {
+        "episodeId": "naruto-677?ep=1235",
+        "number": 3,
+        "title": "Sasuke and Sakura: Friends or Foes?"
+      }
+    ]
+  }
+}
