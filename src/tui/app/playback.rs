@@ -1155,6 +1155,93 @@ impl App {
             });
         }
     }
+
+    pub(crate) fn current_playback_media(
+        &self,
+    ) -> (crate::providers::models::Media, Option<crate::providers::models::EpisodeRef>) {
+        let episode_ref = if self.state.selected_episode > 0 || self.state.selected_season > 0 {
+            let ep_title = self.state.selected_details.as_ref().and_then(|d| {
+                d.episodes.as_ref().and_then(|eps| {
+                    eps.iter()
+                        .find(|e| {
+                            e.season == self.state.selected_season as u32
+                                && e.episode == self.state.selected_episode as u32
+                        })
+                        .and_then(|e| e.title.clone())
+                })
+            });
+            Some(crate::providers::models::EpisodeRef {
+                season: self.state.selected_season as u32,
+                episode: self.state.selected_episode as u32,
+                title: ep_title,
+                duration_secs: None,
+            })
+        } else {
+            None
+        };
+
+        if let Some(media) = &self.state.selected_media {
+            return (media.clone(), episode_ref);
+        }
+
+        if let Some(details) = &self.state.selected_details {
+            let media = crate::providers::models::Media {
+                id: details.id.clone(),
+                title: details.title.clone(),
+                original_title: None,
+                overview: details.description.clone(),
+                poster_url: details.poster_url.clone(),
+                backdrop_url: None,
+                media_type: details.media_type,
+                release_year: details.year,
+                genres: details.genres.clone(),
+                rating: details.rating,
+                duration_minutes: None,
+                seasons_count: details.seasons.as_ref().map(|s| s.len() as u32),
+                episodes_count: None,
+                status: None,
+                external_ids: crate::providers::models::ExternalIds::default(),
+                cast: Vec::new(),
+                trailer_url: None,
+            };
+            return (media, episode_ref);
+        }
+
+        let history_item = self.build_watch_history_item();
+        let fallback_title = history_item
+            .as_ref()
+            .map(|h| h.title.clone())
+            .unwrap_or_else(|| "Unknown".to_string());
+        let fallback_id = history_item
+            .as_ref()
+            .map(|h| h.subject_id.clone())
+            .unwrap_or_else(|| "unknown".to_string());
+
+        let media = crate::providers::models::Media {
+            id: crate::providers::models::ProviderMediaId {
+                provider: crate::providers::models::ProviderKind::MovieBox,
+                value: fallback_id,
+            },
+            title: fallback_title,
+            original_title: None,
+            overview: None,
+            poster_url: None,
+            backdrop_url: None,
+            media_type: crate::providers::models::MediaType::Movie,
+            release_year: None,
+            genres: Vec::new(),
+            rating: None,
+            duration_minutes: None,
+            seasons_count: None,
+            episodes_count: None,
+            status: None,
+            external_ids: crate::providers::models::ExternalIds::default(),
+            cast: Vec::new(),
+            trailer_url: None,
+        };
+
+        (media, episode_ref)
+    }
 }
 
 #[cfg(test)]
