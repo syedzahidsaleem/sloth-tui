@@ -401,6 +401,7 @@ fn hex_to_bytes(hex: &str) -> Result<Vec<u8>, ()> {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Deserialize)]
+#[serde(bound(deserialize = "T: DeserializeOwned"))]
 struct GraphQLResponse<T> {
     #[serde(default)]
     data: Option<T>,
