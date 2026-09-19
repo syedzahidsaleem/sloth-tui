@@ -372,6 +372,11 @@ impl App {
                             self.state.cycle_settings_player(forward);
                             self.persist_config();
                         }
+                        3 => {
+                            self.state.discord_rpc_enabled = !self.state.discord_rpc_enabled;
+                            self.discord_rpc.set_enabled(self.state.discord_rpc_enabled);
+                            self.persist_config();
+                        }
                         _ => {}
                     }
                 }
@@ -501,6 +506,11 @@ impl App {
                                 self.state.settings_download_dir_input =
                                     Some(crate::tui::text::TextInputBuffer::from_str(&current));
                             }
+                        }
+                        3 => {
+                            self.state.discord_rpc_enabled = !self.state.discord_rpc_enabled;
+                            self.discord_rpc.set_enabled(self.state.discord_rpc_enabled);
+                            self.persist_config();
                         }
                         _ => {}
                     }
