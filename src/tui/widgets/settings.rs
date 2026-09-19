@@ -229,7 +229,12 @@ fn render_category_rows(
             render_content_modes_settings(frame, rows_area, state, theme)
         }
         SettingsCategory::Appearance => render_appearance_settings(frame, rows_area, state, theme),
+        SettingsCategory::Accounts => render_accounts_settings(frame, rows_area, state, theme),
         SettingsCategory::StorageInfo => render_storage_settings(frame, rows_area, state, theme),
+    }
+
+    if state.anilist_auth_prompt {
+        render_anilist_auth_modal(frame, popup_area, state, theme);
     }
 }
 fn has_active_settings_popup(state: &AppState) -> bool {
@@ -238,6 +243,7 @@ fn has_active_settings_popup(state: &AppState) -> bool {
         || state.show_sources_popup
         || state.player_picker_popup
         || state.show_browse_popup
+        || state.anilist_auth_prompt
         || state.settings_download_dir_input.is_some()
 }
 
@@ -595,6 +601,101 @@ fn render_appearance_settings(frame: &mut Frame, area: Rect, state: &AppState, t
             state.basic_terminal,
         );
     }
+}
+
+fn render_accounts_settings(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
+    let row_rects = settings_row_rects_in_area(area, 1);
+    let has_active_popup = has_active_settings_popup(state);
+
+    if let Some(&row_area) = row_rects.first() {
+        let is_selected = state.settings_selected_row == 0;
+        let is_active_selected = is_selected && !has_active_popup;
+
+        let value_spans = if state.anilist_authenticated {
+            let username = state.anilist_username.as_deref().unwrap_or("Connected");
+            vec![
+                Span::styled(format!("Logged in as {username} "), theme.accent),
+                Span::styled(
+                    "[Logout]",
+                    if is_active_selected {
+                        theme.error.add_modifier(Modifier::BOLD)
+                    } else {
+                        theme.muted
+                    },
+                ),
+            ]
+        } else {
+            vec![
+                Span::styled("Not logged in ", theme.muted),
+                Span::styled(
+                    "[Login]",
+                    if is_active_selected {
+                        theme.accent.add_modifier(Modifier::BOLD)
+                    } else {
+                        theme.text
+                    },
+                ),
+            ]
+        };
+
+        render_row(
+            frame,
+            row_area,
+            SettingRow {
+                is_selected,
+                has_active_popup,
+                label: "AniList",
+                value_spans,
+            },
+            theme,
+            state.basic_terminal,
+        );
+    }
+}
+
+fn render_anilist_auth_modal(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
+    use ratatui::widgets::{Block, Borders, Clear, Paragraph};
+    let width = area.width.min(60);
+    let height = 8;
+    let x = area.x + (area.width.saturating_sub(width)) / 2;
+    let y = area.y + (area.height.saturating_sub(height)) / 2;
+    let modal_area = Rect::new(x, y, width, height);
+
+    frame.render_widget(Clear, modal_area);
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title(" AniList Authorization ")
+        .border_style(theme.accent);
+
+    let inner = block.inner(modal_area);
+    frame.render_widget(block, modal_area);
+
+    let input_text = state
+        .anilist_token_input
+        .as_ref()
+        .map(|b| b.as_str())
+        .unwrap_or("");
+
+    let lines = vec![
+        Line::from(vec![Span::styled(
+            "Paste your AniList access token below:",
+            theme.text,
+        )]),
+        Line::from(""),
+        Line::from(vec![
+            Span::styled("> ", theme.accent),
+            Span::styled(input_text, theme.text.add_modifier(Modifier::BOLD)),
+            Span::styled("█", theme.accent),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Enter: Submit  |  Esc: Cancel",
+            theme.muted,
+        )]),
+    ];
+
+    frame.render_widget(Paragraph::new(lines), inner);
 }
 
 fn render_storage_settings(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
@@ -980,6 +1081,10 @@ mod tests {
         );
         assert_eq!(
             settings_category_tab_at(compact_popup, 32, 3, false, SettingsCategory::General),
+            Some(SettingsCategory::Accounts)
+        );
+        assert_eq!(
+            settings_category_tab_at(compact_popup, 40, 3, false, SettingsCategory::General),
             Some(SettingsCategory::StorageInfo)
         );
     }
@@ -1053,6 +1158,64 @@ mod tests {
     }
 
     #[test]
+    fn test_render_accounts_labels() {
+        let backend = TestBackend::new(80, 24);
+        let mut terminal = Terminal::new(backend).unwrap();
+        let theme = Theme::mocha();
+        let mut state = AppState {
+            show_settings_popup: true,
+            settings_category: SettingsCategory::Accounts,
+            settings_selected_row: 0,
+            anilist_authenticated: false,
+            ..Default::default()
+        };
+
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                draw(frame, area, &mut state, &theme);
+            })
+            .unwrap();
+
+        let buffer = terminal.backend().buffer();
+        let rendered = (0..buffer.area.height)
+            .map(|y| {
+                (0..buffer.area.width)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("AniList"));
+        assert!(rendered.contains("Not logged in"));
+        assert!(rendered.contains("[Login]"));
+
+        // Now test logged in
+        state.anilist_authenticated = true;
+        state.anilist_username = Some("testuser".to_string());
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                draw(frame, area, &mut state, &theme);
+            })
+            .unwrap();
+
+        let buffer = terminal.backend().buffer();
+        let rendered_logged_in = (0..buffer.area.height)
+            .map(|y| {
+                (0..buffer.area.width)
+                    .map(|x| buffer[(x, y)].symbol())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered_logged_in.contains("Logged in as testuser"));
+        assert!(rendered_logged_in.contains("[Logout]"));
+    }
+
+    #[test]
     fn test_settings_download_input_multibyte_utf8_cursor_split() {
         use crate::tui::text::TextInputBuffer;
         let mut input = TextInputBuffer::from_str("C:\\Users\\山田\\Downloads");
@@ -1063,3 +1226,4 @@ mod tests {
         assert_eq!(after, "\\Downloads");
     }
 }
+
