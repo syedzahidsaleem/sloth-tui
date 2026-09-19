@@ -32,6 +32,9 @@ impl DiscordRpc {
 
     /// Toggles Discord Rich Presence on or off at runtime.
     pub fn set_enabled(&mut self, enabled: bool) {
+        if self.enabled == enabled {
+            return;
+        }
         self.enabled = enabled;
         if enabled {
             let _ = self.client.start();
@@ -45,7 +48,7 @@ impl DiscordRpc {
         self.enabled
     }
 
-    /// Updates the Discord status to reflect active media playback.
+    /// Updates the Discord status to reflect active media playback in a background thread.
     pub fn set_watching(&mut self, media: &Media, episode: Option<&EpisodeRef>) {
         if !self.enabled {
             return;
@@ -71,39 +74,43 @@ impl DiscordRpc {
             .unwrap_or_default()
             .as_secs();
 
-        let _ = self.client.set_activity(|act| {
-            act.details(details)
-                .state(state_line)
-                .assets(|assets| assets.large_image("sloth_logo").large_text("Sloth TUI"))
-                .timestamps(|ts| ts.start(now))
+        let mut client = self.client.clone();
+        std::thread::spawn(move || {
+            let _ = client.set_activity(|act| {
+                act.details(details)
+                    .state(state_line)
+                    .assets(|assets| assets.large_image("sloth_logo").large_text("Sloth TUI"))
+                    .timestamps(|ts| ts.start(now))
+            });
         });
     }
 
-    /// Updates the Discord status to browsing mode.
+    /// Updates the Discord status to browsing mode in a background thread.
     pub fn set_browsing(&mut self) {
         if !self.enabled {
             return;
         }
 
-        let _ = self.client.set_activity(|act| {
-            act.details("Looking for something to watch")
-                .state("Browsing")
-                .assets(|assets| assets.large_image("sloth_logo").large_text("Sloth TUI"))
+        let mut client = self.client.clone();
+        std::thread::spawn(move || {
+            let _ = client.set_activity(|act| {
+                act.details("Looking for something to watch")
+                    .state("Browsing")
+                    .assets(|assets| assets.large_image("sloth_logo").large_text("Sloth TUI"))
+            });
         });
     }
 
-    /// Clears any active presence from Discord.
+    /// Clears any active presence from Discord in a background thread.
     pub fn clear(&mut self) {
-        let _ = self.client.clear_activity();
-    }
-}
-
-#[cfg(feature = "discord")]
-impl Drop for DiscordRpc {
-    fn drop(&mut self) {
-        if self.enabled {
-            self.clear();
+        if !self.enabled {
+            return;
         }
+
+        let mut client = self.client.clone();
+        std::thread::spawn(move || {
+            let _ = client.clear_activity();
+        });
     }
 }
 
