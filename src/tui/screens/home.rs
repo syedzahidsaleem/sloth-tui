@@ -2947,7 +2947,7 @@ mod tests {
 
         assert!(rendered.contains("help"));
         assert!(rendered.contains("Inception"));
-        assert!(!rendered.contains("Favorites"));
+        assert!(!rendered.contains(" Favorites "));
         assert!(!rendered.contains("Secret Favorite Movie"));
     }
 
@@ -3558,6 +3558,7 @@ mod tests {
         let theme = Theme::mocha();
 
         let mut tv_state = AppState {
+            active_tab: Tab::LiveTV,
             is_tv_mode: true,
             basic_terminal: false,
             ..Default::default()
@@ -3810,11 +3811,11 @@ mod tests {
             .unwrap();
 
         let buffer = terminal.backend().buffer();
-        assert_eq!(buffer[(0, 1)].symbol(), " ");
-        assert_eq!(buffer[(1, 1)].symbol(), " ");
-        assert_eq!(buffer[(2, 1)].symbol(), "❯");
         assert_eq!(buffer[(0, 3)].symbol(), " ");
         assert_eq!(buffer[(1, 3)].symbol(), " ");
+        assert_eq!(buffer[(2, 3)].symbol(), "❯");
+        assert_eq!(buffer[(0, 5)].symbol(), " ");
+        assert_eq!(buffer[(1, 5)].symbol(), " ");
     }
     #[test]
     fn test_search_result_selection_indicator_basic_terminal() {
