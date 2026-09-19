@@ -393,7 +393,8 @@ impl App {
             | Action::SettingsResetDownloadDir
             | Action::ToggleProvider(..)
             | Action::CheckBdixNetwork
-            | Action::BdixProbeResult { .. } => {
+            | Action::BdixProbeResult { .. }
+            | Action::AniListAuthStatus { .. } => {
                 self.handle_system(action).await;
             }
 
