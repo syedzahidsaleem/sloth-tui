@@ -176,6 +176,9 @@ pub enum Action {
     SearchResultsReceived(Vec<crate::providers::models::Media>),
     ResumePosition(f64),
     PlaybackStarted,
+    PlaybackEnded {
+        resume_position_secs: Option<f64>,
+    },
     AnimeEpisodesReceived(Vec<crate::providers::models::EpisodeRef>),
 }
 
