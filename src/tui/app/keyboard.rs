@@ -832,6 +832,8 @@ impl App {
                                         self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
                                     }
                                 }
+                            } else if self.state.active_tab == crate::tui::state::Tab::F1 {
+                                self.state.f1_tab.selected_session_idx = self.state.f1_tab.selected_session_idx.saturating_sub(1);
                             } else {
                                 self.action_sender.send(Action::MoveUp).ok();
                             }
@@ -862,6 +864,10 @@ impl App {
                                             self.state.sports_tab.selected_stream_idx = (self.state.sports_tab.selected_stream_idx + 1).min(self.state.sports_tab.streams.len() - 1);
                                         }
                                     }
+                                }
+                            } else if self.state.active_tab == crate::tui::state::Tab::F1 {
+                                if !self.state.f1_tab.calendar.is_empty() {
+                                    self.state.f1_tab.selected_session_idx = (self.state.f1_tab.selected_session_idx + 1).min(self.state.f1_tab.calendar.len() - 1);
                                 }
                             } else {
                                 self.action_sender.send(Action::MoveDown).ok();
@@ -1005,6 +1011,8 @@ impl App {
                                         crate::tui::app::sports::handle_stream_play(&mut self.state, &self.action_sender);
                                     }
                                 }
+                            } else if self.state.active_tab == crate::tui::state::Tab::F1 {
+                                crate::tui::app::f1::handle_f1_session_play(&mut self.state, &self.action_sender, None);
                             } else if self.state.search_results.is_empty()
                                 && !self.state.search_query.trim().is_empty()
                             {
@@ -1029,6 +1037,8 @@ impl App {
                         KeyCode::Char('r') | KeyCode::Char('R') => {
                             if self.state.active_tab == crate::tui::state::Tab::Sports {
                                 crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
+                            } else if self.state.active_tab == crate::tui::state::Tab::F1 {
+                                crate::tui::app::f1::handle_f1_calendar_load(&mut self.state, &self.action_sender);
                             } else if self.state.is_tv_mode {
                                 self.action_sender.send(Action::TvReloadPlaylists).ok();
                             } else {
@@ -1244,6 +1254,23 @@ impl App {
                                     self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
                                 }
                             }
+                        }
+                        KeyCode::Char('w') | KeyCode::Char('W')
+                            if self.state.active_tab == crate::tui::state::Tab::F1 =>
+                        {
+                            crate::tui::app::f1::handle_f1_session_play(&mut self.state, &self.action_sender, None);
+                        }
+                        KeyCode::Char('j') | KeyCode::Char('J')
+                            if self.state.active_tab == crate::tui::state::Tab::F1 =>
+                        {
+                            if !self.state.f1_tab.calendar.is_empty() {
+                                self.state.f1_tab.selected_session_idx = (self.state.f1_tab.selected_session_idx + 1).min(self.state.f1_tab.calendar.len() - 1);
+                            }
+                        }
+                        KeyCode::Char('k') | KeyCode::Char('K')
+                            if self.state.active_tab == crate::tui::state::Tab::F1 =>
+                        {
+                            self.state.f1_tab.selected_session_idx = self.state.f1_tab.selected_session_idx.saturating_sub(1);
                         }
                         KeyCode::Char(c)
                             if (key.modifiers.is_empty()
@@ -2032,5 +2059,57 @@ mod tests {
             }
         }
         assert!(dispatched, "Enter on stream should dispatch playback action");
+    }
+
+    #[tokio::test]
+    async fn test_f1_tab_keys() {
+        let mut app = App::new();
+        app.state.active_screen = crate::tui::state::Screen::Home;
+        app.state.input_mode = InputMode::Normal;
+        app.state.active_tab = crate::tui::state::Tab::F1;
+
+        use crate::tui::state::{F1Session, F1SessionKind, F1SessionSlot};
+        let now = chrono::Utc::now();
+        app.state.f1_tab.calendar = vec![
+            F1Session {
+                round: 1,
+                name: "Bahrain GP".into(),
+                circuit: "Sakhir".into(),
+                country: "Bahrain".into(),
+                city: "Sakhir".into(),
+                sessions: vec![F1SessionSlot {
+                    kind: F1SessionKind::Race,
+                    starts_at: now + chrono::Duration::days(1),
+                    stream_url: None,
+                }],
+            },
+            F1Session {
+                round: 2,
+                name: "Saudi GP".into(),
+                circuit: "Jeddah".into(),
+                country: "Saudi Arabia".into(),
+                city: "Jeddah".into(),
+                sessions: vec![F1SessionSlot {
+                    kind: F1SessionKind::Race,
+                    starts_at: now + chrono::Duration::days(8),
+                    stream_url: None,
+                }],
+            },
+        ];
+
+        // Navigate with j and k
+        assert_eq!(app.state.f1_tab.selected_session_idx, 0);
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.f1_tab.selected_session_idx, 1);
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.f1_tab.selected_session_idx, 1); // clamped
+        app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.f1_tab.selected_session_idx, 0);
+
+        // Test Down and Up keys
+        app.handle_key(KeyEvent::new(KeyCode::Down, KeyModifiers::empty())).await;
+        assert_eq!(app.state.f1_tab.selected_session_idx, 1);
+        app.handle_key(KeyEvent::new(KeyCode::Up, KeyModifiers::empty())).await;
+        assert_eq!(app.state.f1_tab.selected_session_idx, 0);
     }
 }
