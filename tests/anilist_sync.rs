@@ -23,9 +23,10 @@ async fn setup_test_db() -> sqlx::SqlitePool {
 #[test]
 fn test_login_url_format() {
     let url = AniListClient::login_url("12345");
-    assert!(url.contains("client_id=12345"));
-    assert!(url.contains("response_type=token"));
-    assert!(url.contains("redirect_uri=https://anilist.co/api/v2/oauth/pin"));
+    assert_eq!(
+        url,
+        "https://anilist.co/api/v2/oauth/authorize?client_id=12345&response_type=token"
+    );
 }
 
 #[tokio::test]
