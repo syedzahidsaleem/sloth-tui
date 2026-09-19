@@ -43,7 +43,7 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
     if state.f1_tab.loading {
         let spinner = crate::tui::widgets::loading_spinner(state.tick_count, false);
         let p = Paragraph::new(format!("{spinner} Fetching F1 calendar & session schedule..."))
-            .style(theme.info)
+            .style(theme.teal)
             .alignment(Alignment::Center);
         f.render_widget(p, inner);
         return;
@@ -223,7 +223,7 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
     let table = Table::new(rows, widths)
         .header(header)
         .block(block)
-        .highlight_style(theme.highlight.add_modifier(Modifier::BOLD))
+        .row_highlight_style(theme.highlight.add_modifier(Modifier::BOLD))
         .highlight_symbol("▶ ");
 
     let mut table_state = TableState::default();
