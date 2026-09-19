@@ -22,7 +22,7 @@ pub fn category_tab_rects(
 ) -> Vec<(SettingsCategory, Rect)> {
     let mut results = Vec::new();
     let mut current_x = tabs_area.x;
-    let compact = tabs_area.width < 52;
+    let compact = tabs_area.width < 70;
     let gap = if compact { 2 } else { 5 };
 
     for cat in SettingsCategory::ALL {
@@ -158,7 +158,7 @@ fn render_tabs(frame: &mut Frame, area: Rect, popup_area: Rect, state: &AppState
     let mut line0_spans = Vec::new();
     let mut line1_spans = Vec::new();
 
-    let compact = popup_area.width < 58;
+    let compact = popup_area.width < 76;
     for (i, cat) in SettingsCategory::ALL.iter().enumerate() {
         if i > 0 {
             let gap = if compact { "  " } else { "     " };
@@ -960,7 +960,7 @@ mod tests {
                 .join("\n");
 
             assert!(rendered.contains("Settings & Preferences"));
-            assert!(rendered.contains(cat.title()));
+            assert!(rendered.contains(cat.title()) || rendered.contains(cat.compact_title()));
         }
     }
 
