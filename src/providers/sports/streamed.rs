@@ -91,6 +91,52 @@ impl StreamedProvider {
         Ok(matches)
     }
 
+    /// Internal helper to fetch all sporting events from `/api/matches/all-sports`.
+    async fn fetch_all_sports_matches(&self) -> Result<Vec<LiveMatch>, ProviderError> {
+        let url = format!(
+            "{}/api/matches/all-sports",
+            self.base_url.trim_end_matches('/')
+        );
+        let response = self
+            .client
+            .get(&url)
+            .header("User-Agent", USER_AGENT)
+            .send()
+            .await
+            .map_err(|e| ProviderError::Network(e.to_string()))?;
+
+        if !response.status().is_success() {
+            if response.status() == reqwest::StatusCode::NOT_FOUND {
+                return Ok(Vec::new());
+            }
+            return Err(ProviderError::Unavailable(format!(
+                "Streamed API matches/all-sports returned status: {}",
+                response.status()
+            )));
+        }
+
+        let body = response
+            .text()
+            .await
+            .map_err(|e| ProviderError::Network(e.to_string()))?;
+
+        let items: Vec<ApiMatchItem> = serde_json::from_str(&body).map_err(|e| {
+            ProviderError::Parsing(format!("Failed to parse all-sports matches JSON: {e}"))
+        })?;
+
+        let now = chrono::Utc::now();
+        let matches = items
+            .into_iter()
+            .map(|item| {
+                let starts_at = item.extract_starts_at();
+                let is_live = starts_at.map_or(false, |dt| dt <= now);
+                item.into_live_match(is_live)
+            })
+            .collect();
+
+        Ok(matches)
+    }
+
     /// Fetches sporting events filtered by sport category, or all events if sport is "all".
     pub async fn fetch_matches_by_sport(&self, sport: &str) -> Result<Vec<LiveMatch>, ProviderError> {
         let sport_normalized = sport.trim().to_lowercase();
@@ -99,48 +145,7 @@ impl StreamedProvider {
         }
 
         if sport_normalized.is_empty() || sport_normalized == "all" || sport_normalized == "all-sports" {
-            let url = format!(
-                "{}/api/matches/all-sports",
-                self.base_url.trim_end_matches('/')
-            );
-            let response = self
-                .client
-                .get(&url)
-                .header("User-Agent", USER_AGENT)
-                .send()
-                .await
-                .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-            if !response.status().is_success() {
-                if response.status() == reqwest::StatusCode::NOT_FOUND {
-                    return Ok(Vec::new());
-                }
-                return Err(ProviderError::Unavailable(format!(
-                    "Streamed API matches/all-sports returned status: {}",
-                    response.status()
-                )));
-            }
-
-            let body = response
-                .text()
-                .await
-                .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-            let items: Vec<ApiMatchItem> = serde_json::from_str(&body).map_err(|e| {
-                ProviderError::Parsing(format!("Failed to parse all-sports matches JSON: {e}"))
-            })?;
-
-            let now = chrono::Utc::now();
-            let matches = items
-                .into_iter()
-                .map(|item| {
-                    let starts_at = item.extract_starts_at();
-                    let is_live = starts_at.map_or(false, |dt| dt <= now);
-                    item.into_live_match(is_live)
-                })
-                .collect();
-
-            return Ok(matches);
+            return self.fetch_all_sports_matches().await;
         }
 
         // Try direct sport endpoint first (e.g. /api/matches/{sport})
@@ -178,7 +183,7 @@ impl StreamedProvider {
         }
 
         // Fallback: Fetch all-sports and filter by category
-        let all_matches = self.fetch_matches_by_sport("all-sports").await?;
+        let all_matches = self.fetch_all_sports_matches().await?;
         let filtered = all_matches
             .into_iter()
             .filter(|m| m.category.eq_ignore_ascii_case(&sport_normalized))
