@@ -8,6 +8,7 @@ use crate::tui::{action::Action, state::AppState, theme::Theme};
 mod addons;
 pub mod anime;
 mod download;
+pub mod f1;
 mod favorites;
 mod keyboard;
 mod mouse;
