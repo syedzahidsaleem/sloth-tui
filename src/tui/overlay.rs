@@ -81,7 +81,7 @@ pub fn addon_manager_layout(area: Rect, addons_count: usize, input_active: bool)
 }
 pub fn settings_modal_layout(area: Rect, category: crate::tui::state::SettingsCategory) -> Rect {
     let min_width = 44u16.min(area.width.saturating_sub(2));
-    let popup_width = 68u16.min(area.width.saturating_sub(2)).max(min_width);
+    let popup_width = 76u16.min(area.width.saturating_sub(2)).max(min_width);
     let content_height = (category.row_count() as u16).max(1);
     let popup_height = (content_height + 4).min(area.height.saturating_sub(2));
     let available_width = area.width.saturating_sub(2).max(1);
