@@ -1,0 +1,38 @@
+[
+  {
+    "id": "arsenal-vs-chelsea-2026-09-19",
+    "title": "Arsenal vs Chelsea",
+    "category": "football",
+    "teams": {
+      "home": "Arsenal",
+      "away": "Chelsea"
+    },
+    "competition": "Premier League",
+    "popular": true,
+    "poster": "https://streamed.su/posters/football.png",
+    "sources": [
+      {
+        "id": "stream-1",
+        "streamNo": 1
+      }
+    ]
+  },
+  {
+    "id": "lakers-vs-warriors-2026-09-19",
+    "title": "LA Lakers vs Golden State Warriors",
+    "category": "basketball",
+    "teams": {
+      "home": "LA Lakers",
+      "away": "Golden State Warriors"
+    },
+    "competition": "NBA",
+    "popular": true,
+    "poster": "https://streamed.su/posters/basketball.png",
+    "sources": [
+      {
+        "id": "stream-2",
+        "streamNo": 1
+      }
+    ]
+  }
+]
