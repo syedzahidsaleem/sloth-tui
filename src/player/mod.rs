@@ -1,8 +1,63 @@
 //! Video player integrations (MPV, VLC, IINA, Android Intent).
 
+pub mod iina;
+pub mod mpv;
 pub mod tracker;
+pub mod vlc;
+
+pub use iina::IinaPlayer;
+pub use mpv::MpvPlayer;
+pub use vlc::VlcPlayer;
 
 use std::{path::Path, process::Command};
+
+/// Launches player according to config, tracks resume position via IPC, and saves state to SQLite upon exit.
+pub async fn launch_player(
+    stream: &crate::providers::models::StreamUrl,
+    resume_pos: Option<f64>,
+    config: &crate::config::PlayerConfig,
+    db_pool: &sqlx::SqlitePool,
+    media_id: &str,
+    season: u32,
+    episode: u32,
+) -> Result<(), crate::SlothError> {
+    let (player_choice, _) = crate::config::resolve_player(config);
+
+    let final_pos = match player_choice.to_ascii_lowercase().as_str() {
+        "vlc" => {
+            let mut player = vlc::VlcPlayer::spawn(stream, resume_pos, config).await?;
+            player.wait_for_exit().await
+        }
+        #[cfg(target_os = "macos")]
+        "iina" => {
+            let mut player = iina::IinaPlayer::spawn(stream, resume_pos, config).await?;
+            player.wait_for_exit().await
+        }
+        _ => {
+            let mut player = mpv::MpvPlayer::spawn(stream, resume_pos, config).await?;
+            player.wait_for_exit().await
+        }
+    };
+
+    if let Some(pos) = final_pos {
+        let entry = crate::db::WatchEntry {
+            media_id: media_id.to_string(),
+            season,
+            episode,
+            episode_title: None,
+            resume_position: pos,
+            duration: None,
+            completed: false,
+            source_provider: Some(stream.provider_id.to_string()),
+            quality: Some(stream.quality.to_string()),
+        };
+        if let Err(e) = crate::db::history::upsert(db_pool, &entry).await {
+            log::warn!("failed to save playback position to database: {e}");
+        }
+    }
+
+    Ok(())
+}
 
 /// Windows process creation flag to suppress window creation.
 pub const CREATE_NO_WINDOW: u32 = 0x0800_0000;
