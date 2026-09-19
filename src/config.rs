@@ -233,6 +233,78 @@ pub fn favorites_path() -> Option<PathBuf> {
     data_dir().map(|dir| dir.join("favorites.json"))
 }
 
+/// Returns the path to the SQLite database file (`sloth.db`).
+pub fn db_path() -> PathBuf {
+    if let Ok(path) = std::env::var("SLOTH_DB_PATH") {
+        return PathBuf::from(path);
+    }
+    if let Some(dir) = data_dir() {
+        return dir.join("sloth.db");
+    }
+    PathBuf::from("sloth.db")
+}
+
+/// Checks PATH for available video players in preference order: mpv, vlc, iina, celluloid.
+pub fn detect_available_players() -> Vec<String> {
+    let candidates = ["mpv", "vlc", "iina", "celluloid"];
+    candidates
+        .iter()
+        .filter(|&&name| is_player_in_path(name))
+        .map(|&s| s.to_string())
+        .collect()
+}
+
+/// Checks whether an executable name is available on the system PATH.
+pub fn is_player_in_path(name: &str) -> bool {
+    let mut paths_to_search: Vec<PathBuf> = Vec::new();
+    if let Some(path_var) = std::env::var_os("PATH") {
+        paths_to_search.extend(std::env::split_paths(&path_var));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let candidate_exts = ["", ".exe", ".com", ".cmd", ".bat"];
+        for dir in paths_to_search {
+            for ext in &candidate_exts {
+                let candidate = dir.join(format!("{name}{ext}"));
+                if candidate.is_file() {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        for dir in paths_to_search {
+            let candidate = dir.join(name);
+            if candidate.is_file() {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+/// Resolves the effective player: preferred if installed, otherwise first detected, or fallback to preferred.
+/// Returns (player_name, optional_warning_message).
+pub fn resolve_player(config: &PlayerConfig) -> (String, Option<String>) {
+    let detected = detect_available_players();
+    if detected.iter().any(|p| p.eq_ignore_ascii_case(&config.preferred)) {
+        return (config.preferred.clone(), None);
+    }
+    if let Some(first) = detected.first() {
+        let warning = format!(
+            "Preferred player '{}' not found in PATH. Using detected player '{}'.",
+            config.preferred, first
+        );
+        return (first.clone(), Some(warning));
+    }
+    let warning = "No video player (mpv, vlc, iina, celluloid) found in PATH. Playback may fail.".to_string();
+    (config.preferred.clone(), Some(warning))
+}
+
 /// Loads configuration from disk with corrupt file recovery.
 pub fn load() -> Config {
     let Some(path) = config_path() else {
@@ -367,5 +439,17 @@ mod tests {
         let json = serde_json::to_string(&config).expect("serialize");
         let deserialized: Config = serde_json::from_str(&json).expect("deserialize");
         assert_eq!(deserialized.active_mode, config.active_mode);
+    }
+
+    #[test]
+    fn test_player_detection_and_resolution() {
+        let config = PlayerConfig {
+            preferred: "nonexistent_custom_player_xyz".to_string(),
+            custom_command: None,
+            extra_args: Vec::new(),
+        };
+        let (resolved, warning) = resolve_player(&config);
+        assert!(!resolved.is_empty());
+        assert!(warning.is_some());
     }
 }
