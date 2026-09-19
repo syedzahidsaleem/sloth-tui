@@ -1036,6 +1036,59 @@ impl App {
         }
         None
     }
+
+    pub(super) fn handle_playback_ended(&mut self, resume_position_secs: Option<f64>) {
+        self.state.is_playing = false;
+        self.state.is_resolving_playback = false;
+
+        let history_item = self.build_watch_history_item();
+        let media_id = history_item
+            .as_ref()
+            .map(|h| h.subject_id.clone())
+            .or_else(|| self.state.active_subject_id.clone())
+            .unwrap_or_else(|| "media".to_string());
+
+        let season = history_item
+            .as_ref()
+            .map(|h| h.season as u32)
+            .unwrap_or(self.state.selected_season as u32);
+
+        let episode = history_item
+            .as_ref()
+            .map(|h| h.episode as u32)
+            .unwrap_or(self.state.selected_episode as u32);
+
+        let title = history_item.as_ref().map(|h| h.title.clone());
+
+        if let Some(pos) = resume_position_secs {
+            let entry = crate::db::WatchEntry {
+                media_id: media_id.clone(),
+                season,
+                episode,
+                episode_title: title,
+                resume_position: pos,
+                duration: history_item
+                    .as_ref()
+                    .and_then(|h| h.duration_seconds)
+                    .map(|d| d as f64),
+                completed: false,
+                source_provider: history_item.as_ref().map(|h| h.provider.clone()),
+                quality: None,
+            };
+
+            tokio::spawn(async move {
+                let db_path = crate::config::db_path();
+                if let Ok(pool) = crate::db::open(&db_path).await {
+                    if let Err(err) = crate::db::history::upsert(&pool, &entry).await {
+                        tracing::warn!("Failed to upsert watch history: {err}");
+                    }
+                }
+
+                let _ = crate::tracking::sync_trakt(&media_id, season, episode, pos).await;
+                let _ = crate::tracking::sync_anilist(&media_id, episode, pos).await;
+            });
+        }
+    }
 }
 
 #[cfg(test)]
