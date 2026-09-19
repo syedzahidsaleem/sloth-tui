@@ -402,14 +402,16 @@ pub enum SettingsCategory {
     General,
     ContentModes,
     Appearance,
+    Accounts,
     StorageInfo,
 }
 
 impl SettingsCategory {
-    pub const ALL: [Self; 4] = [
+    pub const ALL: [Self; 5] = [
         Self::General,
         Self::ContentModes,
         Self::Appearance,
+        Self::Accounts,
         Self::StorageInfo,
     ];
 
@@ -418,6 +420,7 @@ impl SettingsCategory {
             Self::General => "General",
             Self::ContentModes => "Content Modes",
             Self::Appearance => "Appearance",
+            Self::Accounts => "Accounts",
             Self::StorageInfo => "Maintenance",
         }
     }
@@ -426,7 +429,8 @@ impl SettingsCategory {
             Self::General => "1:Gen",
             Self::ContentModes => "2:Modes",
             Self::Appearance => "3:Theme",
-            Self::StorageInfo => "4:Info",
+            Self::Accounts => "4:Acct",
+            Self::StorageInfo => "5:Info",
         }
     }
 
@@ -435,6 +439,7 @@ impl SettingsCategory {
             Self::General => "GEN",
             Self::ContentModes => "MODES",
             Self::Appearance => "THEME",
+            Self::Accounts => "ACCT",
             Self::StorageInfo => "MAINT",
         }
     }
@@ -444,6 +449,7 @@ impl SettingsCategory {
             Self::General => 3,
             Self::ContentModes => 3,
             Self::Appearance => 1,
+            Self::Accounts => 1,
             Self::StorageInfo => 5,
         }
     }
@@ -451,7 +457,8 @@ impl SettingsCategory {
         match self {
             Self::General => Self::ContentModes,
             Self::ContentModes => Self::Appearance,
-            Self::Appearance => Self::StorageInfo,
+            Self::Appearance => Self::Accounts,
+            Self::Accounts => Self::StorageInfo,
             Self::StorageInfo => Self::General,
         }
     }
@@ -461,7 +468,8 @@ impl SettingsCategory {
             Self::General => Self::StorageInfo,
             Self::ContentModes => Self::General,
             Self::Appearance => Self::ContentModes,
-            Self::StorageInfo => Self::Appearance,
+            Self::Accounts => Self::Appearance,
+            Self::StorageInfo => Self::Accounts,
         }
     }
 }
@@ -614,6 +622,10 @@ pub struct AppState {
     pub settings_player_picker: bool,
     pub available_players: Vec<PlayerKind>,
     pub default_player: Option<String>,
+    pub anilist_authenticated: bool,
+    pub anilist_username: Option<String>,
+    pub anilist_auth_prompt: bool,
+    pub anilist_token_input: Option<crate::tui::text::TextInputBuffer>,
     pub is_loading: bool,
     pub is_resolving_playback: bool,
     pub has_streams_settled: bool,
@@ -788,6 +800,10 @@ impl Default for AppState {
             settings_player_picker: false,
             available_players: Vec::new(),
             default_player: None,
+            anilist_authenticated: false,
+            anilist_username: None,
+            anilist_auth_prompt: false,
+            anilist_token_input: None,
             dirty: true,
             is_loading: false,
             is_resolving_playback: false,
