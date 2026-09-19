@@ -47,6 +47,13 @@ impl App {
                     }
                 }
 
+                if self.state.active_tab == crate::tui::state::Tab::F1 {
+                    if self.state.f1_tab.calendar.is_empty() && !self.state.f1_tab.loading {
+                        crate::tui::app::f1::handle_f1_calendar_load(&mut self.state, &self.action_sender);
+                    }
+                    crate::tui::app::f1::update_countdown(&mut self.state);
+                }
+
                 if self.state.input_mode == crate::tui::state::InputMode::Editing
                     && self.state.active_screen == crate::tui::state::Screen::Home
                 {
