@@ -1,6 +1,7 @@
 //! Reusable TUI widgets for badges, inputs, modals, posters, and scrollbars.
 
 pub mod badge;
+pub mod countdown;
 pub mod input;
 pub mod modal;
 pub mod poster;
@@ -10,6 +11,7 @@ pub mod settings;
 pub use badge::{
     MediaTags, extract_media_tags, render_media_tag_spans, resolution_badge_spans, resolution_label,
 };
+pub use countdown::CountdownWidget;
 pub use input::render_single_line_input;
 pub use modal::{ModalFrame, render_modal_footer};
 pub use poster::render_poster_placeholder;
