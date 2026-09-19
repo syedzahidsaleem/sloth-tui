@@ -550,13 +550,19 @@ impl App {
                 }
             }
             Action::F1CalendarLoad => {
-                self.state.f1_tab.loading = true;
+                crate::tui::app::f1::handle_f1_calendar_load(&mut self.state, &self.action_sender);
             }
             Action::F1CalendarReceived(cal) => {
                 self.state.f1_tab.loading = false;
                 self.state.f1_tab.calendar = cal;
+                crate::tui::app::f1::update_countdown(&mut self.state);
+                if let Some(idx) = self.state.f1_tab.next_race_idx() {
+                    self.state.f1_tab.selected_session_idx = idx;
+                }
             }
-            Action::F1SessionSelected(_session) => {}
+            Action::F1SessionSelected(session) => {
+                crate::tui::app::f1::handle_f1_session_play(&mut self.state, &self.action_sender, Some(&session));
+            }
             Action::SearchResultsReceived(results) => {
                 self.state.anime_tab.results = results;
                 self.state.is_loading = false;
