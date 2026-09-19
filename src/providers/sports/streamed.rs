@@ -523,6 +523,7 @@ impl ApiMatchItem {
         let home_team = match &self.teams {
             Some(ApiTeams::Obj { home, .. }) => home.clone(),
             Some(ApiTeams::Names(h, _)) => Some(h.clone()),
+            Some(ApiTeams::Single(t)) => Some(t.clone()),
             _ => None,
         };
         let away_team = match &self.teams {
