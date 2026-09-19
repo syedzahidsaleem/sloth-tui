@@ -329,12 +329,6 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     let is_series = details.is_series() && !state.available_seasons.is_empty();
     let has_languages = details.has_languages();
     let type_str = if is_series { "Series" } else { "Movie" };
-
-    let genres = if !details.genres.is_empty() {
-        details.genres.join(", ")
-    } else {
-        "N/A".to_string()
-    };
     let duration = details
         .duration
         .as_deref()
@@ -624,9 +618,9 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             extra_meta_spans.push(Span::styled("Genre: ", meta_lbl_s));
             let available_genre_w = text_width.saturating_sub(label_w);
             let display_genres = if val_w > available_genre_w {
-                crate::tui::text::truncate_width(&genres_str, available_genre_w)
+                crate::tui::text::truncate_width(&genres_str, available_genre_w).into_owned()
             } else {
-                std::borrow::Cow::Borrowed(genres_str.as_str())
+                genres_str
             };
             extra_meta_w += label_w + crate::tui::text::width(&display_genres);
             extra_meta_spans.push(Span::styled(
@@ -701,7 +695,6 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             } else {
                 std::borrow::Cow::Borrowed(cast)
             };
-            extra_meta_w += sep_w + label_w + crate::tui::text::width(&display_cast);
             extra_meta_spans.push(Span::styled(display_cast, meta_val_s));
         }
     }
