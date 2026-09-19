@@ -101,6 +101,7 @@ pub struct App {
     action_sender: mpsc::UnboundedSender<Action>,
     action_receiver: mpsc::UnboundedReceiver<Action>,
     request_tasks: RequestTaskHandles,
+    pub(crate) discord_rpc: crate::tracking::DiscordRpc,
 }
 
 impl Default for App {
@@ -116,6 +117,7 @@ impl App {
 
         let config = crate::tui::config::load();
         state.auto_update = config.auto_update;
+        state.discord_rpc_enabled = config.discord_rpc_enabled;
         state.last_update_check = config.last_update_check;
         state.moviebox_enabled = config.moviebox_enabled;
         state.fourkhdhub_enabled = config.fourkhdhub_enabled;
@@ -193,6 +195,8 @@ impl App {
             log::warn!("4KHDHub client unavailable; provider will be disabled");
         }
 
+        let discord_rpc = crate::tracking::DiscordRpc::new(config.discord_rpc_enabled);
+
         let mut app = Self {
             theme,
             state,
@@ -200,6 +204,7 @@ impl App {
             action_sender,
             action_receiver,
             request_tasks: RequestTaskHandles::default(),
+            discord_rpc,
         };
         if app.state.is_tv_mode {
             app.load_tv_playlists_from_config();
@@ -282,6 +287,7 @@ impl App {
                 .download_dir
                 .as_ref()
                 .map(|p| p.to_string_lossy().to_string()),
+            discord_rpc_enabled: self.state.discord_rpc_enabled,
         };
         crate::tui::config::save(&config);
     }
