@@ -72,9 +72,7 @@ impl MpvPlayer {
             cmd.arg(arg);
         }
 
-        let child = cmd
-            .spawn()
-            .map_err(|e| SlothError::Internal(format!("Failed to spawn mpv: {e}")))?;
+        let child = cmd.spawn().map_err(SlothError::Io)?;
 
         // Wait 300ms for IPC socket to be created
         tokio::time::sleep(Duration::from_millis(300)).await;
