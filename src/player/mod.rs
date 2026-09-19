@@ -49,7 +49,7 @@ pub async fn launch_player(
             duration: None,
             completed: false,
             source_provider: Some(stream.provider_id.to_string()),
-            quality: Some(stream.quality.to_string()),
+            quality: Some(stream.quality.label().to_string()),
         };
         if let Err(e) = crate::db::history::upsert(db_pool, &entry).await {
             log::warn!("failed to save playback position to database: {e}");
