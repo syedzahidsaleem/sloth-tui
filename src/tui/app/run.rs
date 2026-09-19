@@ -555,6 +555,13 @@ impl App {
                 self.state.has_search_settled = true;
             }
             Action::ResumePosition(_pos) => {}
+            Action::PlaybackStarted => {
+                self.state.is_loading = false;
+            }
+            Action::AnimeEpisodesReceived(episodes) => {
+                self.state.anime_tab.episodes = episodes;
+                self.state.is_loading = false;
+            }
         }
         None
     }
