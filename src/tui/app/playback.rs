@@ -1037,6 +1037,50 @@ impl App {
         None
     }
 
+    /// Handles playback initiation via MpvPlayer with SQLite resume position lookup and exit tracking.
+    pub fn handle_playback_start(
+        state: &mut crate::tui::state::AppState,
+        tx: &tokio::sync::mpsc::UnboundedSender<crate::tui::action::Action>,
+        stream: crate::providers::models::StreamUrl,
+        media_id: String,
+        season: u32,
+        episode: u32,
+    ) {
+        state.is_playing = true;
+        state.is_loading = false;
+        let tx = tx.clone();
+        let mut config = crate::config::load().player;
+        if let Some(ref p) = state.default_player {
+            config.preferred = p.clone();
+        }
+
+        tokio::spawn(async move {
+            let db_path = crate::config::db_path();
+            let resume_pos = if let Ok(pool) = crate::db::open(&db_path).await {
+                crate::db::history::get_resume_position(&pool, &media_id, season, episode).await
+            } else {
+                None
+            };
+
+            let _ = tx.send(crate::tui::action::Action::PlaybackStarted);
+
+            match crate::player::mpv::MpvPlayer::spawn(&stream, resume_pos, &config).await {
+                Ok(mut player) => {
+                    let final_pos = player.wait_for_exit().await;
+                    let _ = tx.send(crate::tui::action::Action::PlaybackEnded {
+                        resume_position_secs: final_pos,
+                    });
+                }
+                Err(e) => {
+                    tracing::error!("Failed to spawn mpv player: {e}");
+                    let _ = tx.send(crate::tui::action::Action::PlaybackEnded {
+                        resume_position_secs: None,
+                    });
+                }
+            }
+        });
+    }
+
     pub(super) fn handle_playback_ended(&mut self, resume_position_secs: Option<f64>) {
         self.state.is_playing = false;
         self.state.is_resolving_playback = false;
@@ -1558,5 +1602,15 @@ mod tests {
         assert_eq!(app.get_selected_resource_id().as_deref(), Some("res_s2e5"));
         assert_eq!(app.state.selected_season, 2);
         assert_eq!(app.state.selected_episode, 5);
+    }
+
+    #[tokio::test]
+    async fn test_handle_playback_ended_resets_playing_state() {
+        let mut app = crate::tui::app::App::new();
+        app.state.is_playing = true;
+        app.state.is_resolving_playback = true;
+        app.handle_playback_ended(Some(123.45));
+        assert!(!app.state.is_playing);
+        assert!(!app.state.is_resolving_playback);
     }
 }
