@@ -1,6 +1,6 @@
 //! TheMovieDatabase (TMDB) API v3 metadata provider and enrichment service.
 
-use crate::providers::models::{CastMember, EpisodeRef, ExternalIds, Media, MediaType};
+use crate::providers::models::{CastMember, EpisodeRef, Media, MediaType};
 use crate::SlothError;
 use serde::Deserialize;
 use sqlx::SqlitePool;
@@ -16,7 +16,7 @@ pub struct TmdbClient {
     api_key: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct TmdbMovieResult {
     pub id: u32,
     pub title: Option<String>,
@@ -27,7 +27,7 @@ pub struct TmdbMovieResult {
     pub vote_average: Option<f32>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct TmdbTvResult {
     pub id: u32,
     pub name: Option<String>,
@@ -148,7 +148,7 @@ impl TmdbClient {
         let mut req = self
             .http
             .get(&url)
-            .query(&[("api_key", key), ("query", query)]);
+            .query(&[("api_key", key.as_str()), ("query", query)]);
 
         let year_str;
         if let Some(y) = year {
@@ -188,7 +188,7 @@ impl TmdbClient {
         let mut req = self
             .http
             .get(&url)
-            .query(&[("api_key", key), ("query", query)]);
+            .query(&[("api_key", key.as_str()), ("query", query)]);
 
         let year_str;
         if let Some(y) = year {
@@ -225,7 +225,7 @@ impl TmdbClient {
             .http
             .get(&url)
             .query(&[
-                ("api_key", key),
+                ("api_key", key.as_str()),
                 ("append_to_response", "credits,recommendations"),
             ])
             .send()
@@ -256,7 +256,7 @@ impl TmdbClient {
             .http
             .get(&url)
             .query(&[
-                ("api_key", key),
+                ("api_key", key.as_str()),
                 ("append_to_response", "credits,recommendations"),
             ])
             .send()
@@ -290,7 +290,7 @@ impl TmdbClient {
         let resp = self
             .http
             .get(&url)
-            .query(&[("api_key", key)])
+            .query(&[("api_key", key.as_str())])
             .send()
             .await
             .map_err(|e| SlothError::Io(std::io::Error::other(e)))?;
