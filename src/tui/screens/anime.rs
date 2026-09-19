@@ -6,12 +6,11 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, BorderType, Borders, Clear, Paragraph, Scrollbar, ScrollbarOrientation,
+        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation,
         ScrollbarState, Wrap,
     },
 };
 
-use crate::providers::models::{EpisodeRef, Media};
 use crate::tui::state::{AnimePanelFocus, AnimeTabState};
 use crate::tui::theme::Theme;
 
@@ -118,7 +117,7 @@ fn render_left_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
 
         // Line 1: Title + prefix indicator
         let prefix = if is_selected { "> " } else { "  " };
-        let mut title_spans = vec![
+        let title_spans = vec![
             Span::styled(prefix, if is_selected { title_style } else { theme.accent }),
             Span::styled(&anime.title, title_style),
         ];
