@@ -1026,8 +1026,10 @@ impl App {
                         KeyCode::Char('q') => {
                             self.action_sender.send(Action::Quit).ok();
                         }
-                        KeyCode::Char('r') => {
-                            if self.state.is_tv_mode {
+                        KeyCode::Char('r') | KeyCode::Char('R') => {
+                            if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
+                            } else if self.state.is_tv_mode {
                                 self.action_sender.send(Action::TvReloadPlaylists).ok();
                             } else {
                                 self.action_sender.send(Action::Refresh).ok();
@@ -1242,11 +1244,6 @@ impl App {
                                     self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
                                 }
                             }
-                        }
-                        KeyCode::Char('r') | KeyCode::Char('R')
-                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
-                        {
-                            crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
                         }
                         KeyCode::Char(c)
                             if (key.modifiers.is_empty()
