@@ -572,6 +572,10 @@ impl App {
             Action::PlaybackStarted => {
                 self.state.is_loading = false;
             }
+            Action::PlaybackEnded { resume_position_secs } => {
+                self.state.is_playing = false;
+                self.handle_playback_ended(resume_position_secs);
+            }
             Action::AnimeEpisodesReceived(episodes) => {
                 self.state.anime_tab.episodes = episodes;
                 self.state.is_loading = false;
