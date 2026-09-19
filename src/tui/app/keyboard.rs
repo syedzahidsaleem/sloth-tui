@@ -433,6 +433,24 @@ impl App {
             return None;
         }
         if self.state.show_settings_popup {
+            if self.state.anilist_auth_prompt {
+                if let Some(input) = &mut self.state.anilist_token_input {
+                    match key.code {
+                        KeyCode::Esc => {
+                            self.state.anilist_auth_prompt = false;
+                            self.state.anilist_token_input = None;
+                        }
+                        KeyCode::Enter => {
+                            self.action_sender.send(Action::SettingsActivateRow).ok();
+                        }
+                        _ => {
+                            input.handle_key(key);
+                        }
+                    }
+                    return None;
+                }
+            }
+
             if let Some(input) = &mut self.state.settings_download_dir_input {
                 match key.code {
                     KeyCode::Esc => {
@@ -452,6 +470,8 @@ impl App {
                 KeyCode::Esc => {
                     self.state.show_settings_popup = false;
                     self.state.settings_download_dir_input = None;
+                    self.state.anilist_auth_prompt = false;
+                    self.state.anilist_token_input = None;
                     self.persist_config();
                 }
                 KeyCode::Tab => {
