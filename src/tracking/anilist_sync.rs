@@ -39,6 +39,16 @@ impl AniListClient {
         }
     }
 
+    /// Returns the current access token if present.
+    pub fn access_token(&self) -> Option<&str> {
+        self.access_token.as_deref()
+    }
+
+    /// Alias for access_token.
+    pub fn token(&self) -> Option<&str> {
+        self.access_token.as_deref()
+    }
+
     /// Generates the OAuth implicit grant authorization URL for user login.
     pub fn login_url(client_id: &str) -> String {
         format!("{ANILIST_AUTH_URL}?client_id={client_id}&response_type=token")
