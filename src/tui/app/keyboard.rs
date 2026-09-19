@@ -1728,17 +1728,20 @@ mod tests {
             app.handle_key(KeyEvent::new(KeyCode::Char(ch), KeyModifiers::empty()))
                 .await;
             let action = app.action_receiver.try_recv().ok();
-            assert_eq!(
+            assert!(matches!(
                 action,
-                Some(Action::SwitchTab(crate::tui::state::Tab::from_index((i - 1) as usize)))
-            );
+                Some(Action::SwitchTab(tab)) if tab == crate::tui::state::Tab::from_index((i - 1) as usize)
+            ));
         }
 
         // Tab cycling
         app.handle_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::empty()))
             .await;
         let action = app.action_receiver.try_recv().ok();
-        assert_eq!(action, Some(Action::SwitchTab(crate::tui::state::Tab::Anime)));
+        assert!(matches!(
+            action,
+            Some(Action::SwitchTab(crate::tui::state::Tab::Anime))
+        ));
 
         // Sports h / l column switching
         app.state.active_tab = crate::tui::state::Tab::Sports;
