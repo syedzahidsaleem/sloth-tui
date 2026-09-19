@@ -577,12 +577,20 @@ impl App {
                             self.state.suggest_index = None;
                             self.state.search_list_state.select(None);
                             self.state.last_search_edit = std::time::Instant::now();
-                            self.action_sender
-                                .send(Action::Search {
+                            if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                crate::tui::app::anime::handle_anime_search(
+                                    &mut self.state,
+                                    &self.action_sender,
                                     query,
-                                    force_refresh: false,
-                                })
-                                .ok();
+                                );
+                            } else {
+                                self.action_sender
+                                    .send(Action::Search {
+                                        query,
+                                        force_refresh: false,
+                                    })
+                                    .ok();
+                            }
                         } else {
                             self.state.input_mode = InputMode::Normal;
                             self.state.search_suggestions.clear();
@@ -806,14 +814,34 @@ impl App {
                             self.action_sender.send(Action::GoBack).ok();
                         }
                         KeyCode::Up => {
-                            self.action_sender.send(Action::MoveUp).ok();
+                            if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                    self.state.anime_tab.selected_idx = self.state.anime_tab.selected_idx.saturating_sub(1);
+                                } else {
+                                    self.state.anime_tab.selected_episode_idx = self.state.anime_tab.selected_episode_idx.saturating_sub(1);
+                                }
+                            } else {
+                                self.action_sender.send(Action::MoveUp).ok();
+                            }
                         }
                         KeyCode::Down => {
-                            self.action_sender.send(Action::MoveDown).ok();
+                            if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                    if !self.state.anime_tab.results.is_empty() {
+                                        self.state.anime_tab.selected_idx = (self.state.anime_tab.selected_idx + 1).min(self.state.anime_tab.results.len() - 1);
+                                    }
+                                } else if !self.state.anime_tab.episodes.is_empty() {
+                                    self.state.anime_tab.selected_episode_idx = (self.state.anime_tab.selected_episode_idx + 1).min(self.state.anime_tab.episodes.len() - 1);
+                                }
+                            } else {
+                                self.action_sender.send(Action::MoveDown).ok();
+                            }
                         }
                         KeyCode::Left => {
                             if self.state.active_tab == crate::tui::state::Tab::Sports {
                                 self.state.sports_tab.focus = self.state.sports_tab.focus.previous();
+                            } else if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Results;
                             } else {
                                 self.action_sender.send(Action::MoveLeft).ok();
                             }
@@ -821,6 +849,8 @@ impl App {
                         KeyCode::Right => {
                             if self.state.active_tab == crate::tui::state::Tab::Sports {
                                 self.state.sports_tab.focus = self.state.sports_tab.focus.next();
+                            } else if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Episodes;
                             } else {
                                 self.action_sender.send(Action::MoveRight).ok();
                             }
@@ -923,7 +953,13 @@ impl App {
                             }
                         }
                         KeyCode::Enter => {
-                            if self.state.search_results.is_empty()
+                            if self.state.active_tab == crate::tui::state::Tab::Anime {
+                                if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                    crate::tui::app::anime::handle_anime_select(&mut self.state, &self.action_sender);
+                                } else {
+                                    crate::tui::app::anime::handle_anime_episode_select(&mut self.state, &self.action_sender);
+                                }
+                            } else if self.state.search_results.is_empty()
                                 && !self.state.search_query.trim().is_empty()
                             {
                                 self.state.is_loading = true;
@@ -1079,6 +1115,41 @@ impl App {
                             self.action_sender
                                 .send(Action::SwitchTab(crate::tui::state::Tab::from_index(idx)))
                                 .ok();
+                        }
+                        KeyCode::Char('t') | KeyCode::Char('T')
+                            if self.state.active_tab == crate::tui::state::Tab::Anime =>
+                        {
+                            self.action_sender.send(Action::AnimeSubDubToggle).ok();
+                        }
+                        KeyCode::Char('h') | KeyCode::Char('H')
+                            if self.state.active_tab == crate::tui::state::Tab::Anime =>
+                        {
+                            self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Results;
+                        }
+                        KeyCode::Char('l') | KeyCode::Char('L')
+                            if self.state.active_tab == crate::tui::state::Tab::Anime =>
+                        {
+                            self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Episodes;
+                        }
+                        KeyCode::Char('j') | KeyCode::Char('J')
+                            if self.state.active_tab == crate::tui::state::Tab::Anime =>
+                        {
+                            if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                if !self.state.anime_tab.results.is_empty() {
+                                    self.state.anime_tab.selected_idx = (self.state.anime_tab.selected_idx + 1).min(self.state.anime_tab.results.len() - 1);
+                                }
+                            } else if !self.state.anime_tab.episodes.is_empty() {
+                                self.state.anime_tab.selected_episode_idx = (self.state.anime_tab.selected_episode_idx + 1).min(self.state.anime_tab.episodes.len() - 1);
+                            }
+                        }
+                        KeyCode::Char('k') | KeyCode::Char('K')
+                            if self.state.active_tab == crate::tui::state::Tab::Anime =>
+                        {
+                            if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                self.state.anime_tab.selected_idx = self.state.anime_tab.selected_idx.saturating_sub(1);
+                            } else {
+                                self.state.anime_tab.selected_episode_idx = self.state.anime_tab.selected_episode_idx.saturating_sub(1);
+                            }
                         }
                         KeyCode::Char('h') | KeyCode::Char('H')
                             if self.state.active_tab == crate::tui::state::Tab::Sports =>
@@ -1755,5 +1826,27 @@ mod tests {
         app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
             .await;
         assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Matches);
+    }
+
+    #[tokio::test]
+    async fn test_anime_tab_keys() {
+        let mut app = App::new();
+        app.state.active_screen = crate::tui::state::Screen::Home;
+        app.state.input_mode = InputMode::Normal;
+        app.state.active_tab = crate::tui::state::Tab::Anime;
+
+        app.handle_key(KeyEvent::new(KeyCode::Char('t'), KeyModifiers::empty()))
+            .await;
+        let action = app.action_receiver.try_recv().ok();
+        assert!(matches!(action, Some(Action::AnimeSubDubToggle)));
+
+        assert_eq!(app.state.anime_tab.focus, crate::tui::state::AnimePanelFocus::Results);
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.anime_tab.focus, crate::tui::state::AnimePanelFocus::Episodes);
+
+        app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.anime_tab.focus, crate::tui::state::AnimePanelFocus::Results);
     }
 }
