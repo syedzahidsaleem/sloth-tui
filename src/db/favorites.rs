@@ -160,7 +160,7 @@ pub async fn list(pool: &SqlitePool) -> Result<Vec<Media>, SlothError> {
         .map(|r| {
             let genres = r
                 .genres
-                .and_then(|g| serde_json::from_str(&g).ok())
+                .and_then(|g| serde_json::from_str::<Vec<String>>(&g).ok())
                 .unwrap_or_default();
 
             Media {
