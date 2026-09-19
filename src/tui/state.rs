@@ -217,6 +217,7 @@ pub struct F1Session {
     pub name: String,
     pub circuit: String,
     pub country: String,
+    pub city: String,
     pub sessions: Vec<F1SessionSlot>,
 }
 
@@ -250,6 +251,16 @@ impl F1SessionKind {
             Self::Sprint => "Sprint",
             Self::SprintQualifying => "Sprint Qualifying",
             Self::Race => "Race",
+        }
+    }
+
+    pub fn icon(&self) -> &'static str {
+        match self {
+            Self::Race => "🏁",
+            Self::Qualifying => "⏱",
+            Self::Sprint => "⚡",
+            Self::SprintQualifying => "⚡⏱",
+            _ => "🔧",
         }
     }
 }
@@ -361,6 +372,22 @@ pub struct F1TabState {
     pub selected_session_idx: usize,
     pub countdown: Option<std::time::Duration>,
     pub loading: bool,
+}
+
+impl F1TabState {
+    pub fn selected_session(&self) -> Option<&F1Session> {
+        self.calendar.get(self.selected_session_idx)
+    }
+
+    pub fn next_race_idx(&self) -> Option<usize> {
+        let now = chrono::Utc::now();
+        self.calendar.iter().position(|session| {
+            session
+                .sessions
+                .iter()
+                .any(|s| s.starts_at >= now || s.starts_at + chrono::Duration::minutes(150) >= now)
+        })
+    }
 }
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
