@@ -452,7 +452,8 @@ impl App {
             | Action::InitStreamPool(..)
             | Action::StreamPoolInitialized(..)
             | Action::PosterSuccess(..)
-            | Action::SearchPosterLoaded(..) => {
+            | Action::SearchPosterLoaded(..)
+            | Action::MetadataEnriched(..) => {
                 self.handle_requests(action).await;
             }
 
