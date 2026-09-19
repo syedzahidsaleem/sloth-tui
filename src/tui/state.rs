@@ -134,6 +134,22 @@ impl SportsColumnFocus {
             Self::Streams => Self::Matches,
         }
     }
+
+    pub fn move_left(self) -> Self {
+        match self {
+            Self::Sports => Self::Sports,
+            Self::Matches => Self::Sports,
+            Self::Streams => Self::Matches,
+        }
+    }
+
+    pub fn move_right(self) -> Self {
+        match self {
+            Self::Sports => Self::Matches,
+            Self::Matches => Self::Streams,
+            Self::Streams => Self::Streams,
+        }
+    }
 }
 
 /// Live match representation for sports streaming.
@@ -148,6 +164,40 @@ pub struct LiveMatch {
     pub is_popular: bool,
     pub poster: Option<String>,
     pub streams: Vec<MatchStream>,
+}
+
+impl LiveMatch {
+    /// Returns whether this match is currently active and in progress.
+    pub fn is_live(&self) -> bool {
+        self.starts_at
+            .map_or(true, |start| start <= chrono::Utc::now())
+    }
+
+    /// Formats the match timing status badge (e.g. "LIVE 45'", "LIVE", or "in 2h 15m").
+    pub fn time_badge(&self) -> String {
+        let now = chrono::Utc::now();
+        if let Some(start) = self.starts_at {
+            if start <= now {
+                let mins = (now - start).num_minutes();
+                if mins > 0 && mins <= 180 {
+                    format!("LIVE {mins}'")
+                } else {
+                    "LIVE".to_string()
+                }
+            } else {
+                let duration = start - now;
+                let hours = duration.num_hours();
+                let mins = duration.num_minutes() % 60;
+                if hours > 0 {
+                    format!("in {hours}h {mins}m")
+                } else {
+                    format!("in {mins}m")
+                }
+            }
+        } else {
+            "LIVE".to_string()
+        }
+    }
 }
 
 /// Stream URL option for a live match.
@@ -250,7 +300,7 @@ impl AnimeTabState {
 }
 
 /// State machine for the Sports tab.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct SportsTabState {
     pub sports: Vec<String>,
     pub selected_sport_idx: usize,
@@ -259,6 +309,49 @@ pub struct SportsTabState {
     pub streams: Vec<MatchStream>,
     pub selected_stream_idx: usize,
     pub focus: SportsColumnFocus,
+    pub last_refresh: Option<std::time::Instant>,
+}
+
+impl Default for SportsTabState {
+    fn default() -> Self {
+        Self {
+            sports: vec![
+                "Football".to_string(),
+                "Cricket".to_string(),
+                "Basketball".to_string(),
+                "Tennis".to_string(),
+                "Boxing".to_string(),
+                "Baseball".to_string(),
+                "F1".to_string(),
+                "Darts".to_string(),
+                "MMA".to_string(),
+            ],
+            selected_sport_idx: 0,
+            matches: Vec::new(),
+            selected_match_idx: 0,
+            streams: Vec::new(),
+            selected_stream_idx: 0,
+            focus: SportsColumnFocus::Sports,
+            last_refresh: None,
+        }
+    }
+}
+
+impl SportsTabState {
+    /// Returns the currently highlighted sport category name.
+    pub fn selected_sport(&self) -> Option<&str> {
+        self.sports.get(self.selected_sport_idx).map(|s| s.as_str())
+    }
+
+    /// Returns the currently highlighted live match.
+    pub fn selected_match(&self) -> Option<&LiveMatch> {
+        self.matches.get(self.selected_match_idx)
+    }
+
+    /// Returns the currently highlighted stream source.
+    pub fn selected_stream(&self) -> Option<&MatchStream> {
+        self.streams.get(self.selected_stream_idx)
+    }
 }
 
 /// State machine for the Formula 1 tab.
