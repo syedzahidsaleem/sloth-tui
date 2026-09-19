@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::SlothError;
 use crate::config::Config;
 use crate::providers::Provider;
+use crate::providers::anime::HiAnimeProvider;
 use crate::providers::models::{EpisodeRef, Media, MediaType, ProviderError, StreamUrl};
 
 /// Registry managing active providers, prioritized fallback chains, and health state.
@@ -31,7 +32,7 @@ impl ProviderRegistry {
         let _ = config;
         Self {
             movie_chain: Vec::new(),
-            anime_chain: Vec::new(),
+            anime_chain: vec![Arc::new(HiAnimeProvider::new())],
             sports_chain: Vec::new(),
             f1_chain: Vec::new(),
             tv_chain: Vec::new(),
