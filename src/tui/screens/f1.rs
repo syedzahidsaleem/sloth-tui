@@ -3,7 +3,7 @@
 use chrono::Utc;
 use ratatui::Frame;
 use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::style::{Modifier, Style};
+use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, TableState};
 
@@ -33,9 +33,9 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
     let block = Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(theme.border_focus))
+        .border_style(theme.border_focus)
         .title(" 🏎 Formula 1 — 2026 Season ")
-        .title_style(Style::default().fg(theme.accent).add_modifier(Modifier::BOLD));
+        .title_style(theme.accent.add_modifier(Modifier::BOLD));
 
     let inner = block.inner(area);
     f.render_widget(block, area);
@@ -43,7 +43,7 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
     if state.f1_tab.loading {
         let spinner = crate::tui::widgets::loading_spinner(state.tick_count, false);
         let p = Paragraph::new(format!("{spinner} Fetching F1 calendar & session schedule..."))
-            .style(Style::default().fg(theme.info))
+            .style(theme.info)
             .alignment(Alignment::Center);
         f.render_widget(p, inner);
         return;
@@ -63,10 +63,10 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
 
             // 1. Session & Circuit Lines
             let header_line = Line::from(vec![
-                Span::styled("⏰ NEXT: ", Style::default().fg(theme.warning).add_modifier(Modifier::BOLD)),
+                Span::styled("⏰ NEXT: ", theme.rating.add_modifier(Modifier::BOLD)),
                 Span::styled(
                     format!("{} {} — {}", slot.kind.icon(), session.name.to_uppercase(), slot.kind.label()),
-                    Style::default().fg(theme.text).add_modifier(Modifier::BOLD),
+                    theme.text.add_modifier(Modifier::BOLD),
                 ),
             ]);
 
@@ -80,7 +80,7 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
 
             let circuit_line = Line::from(vec![
                 Span::raw("   "),
-                Span::styled(loc_str, Style::default().fg(theme.text_dim)),
+                Span::styled(loc_str, theme.text_dim),
             ]);
 
             f.render_widget(Paragraph::new(vec![header_line, circuit_line]), hero_chunks[0]);
@@ -91,21 +91,20 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
             widget.render_with_theme(hero_chunks[1], f.buffer_mut(), theme);
 
             // 3. Action Buttons
+            let accent_color = theme.accent.fg.unwrap_or(Color::Cyan);
             let buttons_line = Line::from(vec![
                 Span::raw("   "),
                 Span::styled(
                     " [▶ Watch Live (w)] ",
                     Style::default()
                         .fg(theme.bg)
-                        .bg(theme.accent)
+                        .bg(accent_color)
                         .add_modifier(Modifier::BOLD),
                 ),
                 Span::raw("  "),
                 Span::styled(
                     " [📋 View Sessions (Enter)] ",
-                    Style::default()
-                        .fg(theme.text)
-                        .bg(theme.bg_elevated),
+                    theme.text.bg(theme.bg_elevated),
                 ),
             ]);
             f.render_widget(Paragraph::new(vec![Line::raw(""), buttons_line]), hero_chunks[2]);
@@ -129,14 +128,14 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
     let block = Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
-        .border_style(Style::default().fg(theme.border))
+        .border_style(theme.border)
         .title(" Race Calendar ")
-        .title_style(Style::default().fg(theme.text).add_modifier(Modifier::BOLD));
+        .title_style(theme.text.add_modifier(Modifier::BOLD));
 
     if state.f1_tab.calendar.is_empty() {
         let inner = block.inner(area);
         f.render_widget(block, area);
-        let p = Paragraph::new("No Grand Prix races scheduled.").style(Style::default().fg(theme.text_dim));
+        let p = Paragraph::new("No Grand Prix races scheduled.").style(theme.text_dim);
         f.render_widget(p, inner);
         return;
     }
@@ -147,11 +146,7 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
     let header_cells = ["Round", "Grand Prix Event", "Circuit / Location", "Date", "Status"]
         .iter()
         .map(|h| {
-            Cell::from(*h).style(
-                Style::default()
-                    .fg(theme.accent)
-                    .add_modifier(Modifier::BOLD),
-            )
+            Cell::from(*h).style(theme.accent.add_modifier(Modifier::BOLD))
         });
     let header = Row::new(header_cells)
         .style(Style::default().bg(theme.bg_elevated))
@@ -192,19 +187,19 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
 
         // Status badge
         let (status_text, status_style) = if is_next {
-            ("🏁 NEXT RACE", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD))
+            ("🏁 NEXT RACE", theme.accent.add_modifier(Modifier::BOLD))
         } else if is_completed {
-            ("✓ Complete", Style::default().fg(theme.text_dim))
+            ("✓ Complete", theme.text_dim)
         } else {
-            ("Upcoming", Style::default().fg(theme.text))
+            ("Upcoming", theme.text)
         };
 
         let row_style = if is_next {
-            Style::default().fg(theme.text).add_modifier(Modifier::BOLD)
+            theme.text.add_modifier(Modifier::BOLD)
         } else if is_completed {
-            Style::default().fg(theme.text_dim)
+            theme.text_dim
         } else {
-            Style::default().fg(theme.text)
+            theme.text
         };
 
         Row::new(vec![
@@ -228,12 +223,7 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
     let table = Table::new(rows, widths)
         .header(header)
         .block(block)
-        .highlight_style(
-            Style::default()
-                .bg(theme.selection_bg)
-                .fg(theme.text)
-                .add_modifier(Modifier::BOLD),
-        )
+        .highlight_style(theme.highlight.add_modifier(Modifier::BOLD))
         .highlight_symbol("▶ ");
 
     let mut table_state = TableState::default();
@@ -245,16 +235,16 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
 /// Renders contextual shortcuts at the bottom of the screen.
 fn render_footer(f: &mut Frame, area: Rect, theme: &Theme) {
     let hints = Line::from(vec![
-        Span::styled(" j/k / ↑↓", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
-        Span::styled(" Navigate  ", Style::default().fg(theme.text_dim)),
-        Span::styled("Enter", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
-        Span::styled(" Play/Sessions  ", Style::default().fg(theme.text_dim)),
-        Span::styled("w", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
-        Span::styled(" Watch Live  ", Style::default().fg(theme.text_dim)),
-        Span::styled("r", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
-        Span::styled(" Refresh  ", Style::default().fg(theme.text_dim)),
-        Span::styled("?", Style::default().fg(theme.accent).add_modifier(Modifier::BOLD)),
-        Span::styled(" Help", Style::default().fg(theme.text_dim)),
+        Span::styled(" j/k / ↑↓", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Navigate  ", theme.text_dim),
+        Span::styled("Enter", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Play/Sessions  ", theme.text_dim),
+        Span::styled("w", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Watch Live  ", theme.text_dim),
+        Span::styled("r", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Refresh  ", theme.text_dim),
+        Span::styled("?", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Help", theme.text_dim),
     ]);
 
     let p = Paragraph::new(hints).style(Style::default().bg(theme.bg));
