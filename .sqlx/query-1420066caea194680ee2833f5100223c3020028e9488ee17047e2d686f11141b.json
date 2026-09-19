@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        UPDATE watch_history\n        SET completed = 1, watched_at = unixepoch()\n        WHERE media_id = ?1 AND season = ?2 AND episode = ?3\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": []
+  },
+  "hash": "1420066caea194680ee2833f5100223c3020028e9488ee17047e2d686f11141b"
+}

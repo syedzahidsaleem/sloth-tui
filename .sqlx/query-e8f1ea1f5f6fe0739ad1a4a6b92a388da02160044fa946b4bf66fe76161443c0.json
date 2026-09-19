@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT resume_position\n        FROM watch_history\n        WHERE media_id = ?1 AND season = ?2 AND episode = ?3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "resume_position",
+        "ordinal": 0,
+        "type_info": "Float"
+      }
+    ],
+    "parameters": {
+      "Right": 3
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e8f1ea1f5f6fe0739ad1a4a6b92a388da02160044fa946b4bf66fe76161443c0"
+}

@@ -1,0 +1,98 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        SELECT\n            wh.id as \"id!\",\n            wh.media_id as \"media_id!\",\n            wh.season as \"season!\",\n            wh.episode as \"episode!\",\n            wh.episode_title,\n            wh.watched_at as \"watched_at!\",\n            wh.resume_position as \"resume_position!\",\n            wh.duration,\n            wh.completed as \"completed!\",\n            wh.source_provider,\n            wh.quality,\n            m.title as \"title!\",\n            m.kind as \"kind!\",\n            m.poster_url\n        FROM watch_history wh\n        JOIN media m ON m.id = wh.media_id\n        WHERE wh.completed = 0\n          AND wh.resume_position > 0.0\n          AND wh.duration IS NOT NULL\n          AND wh.duration > 0.0\n          AND (wh.resume_position / wh.duration) BETWEEN 0.05 AND 0.85\n        ORDER BY wh.watched_at DESC\n        LIMIT 10\n        ",
+  "describe": {
+    "columns": [
+      {
+        "name": "id!",
+        "ordinal": 0,
+        "type_info": "Integer"
+      },
+      {
+        "name": "media_id!",
+        "ordinal": 1,
+        "type_info": "Text"
+      },
+      {
+        "name": "season!",
+        "ordinal": 2,
+        "type_info": "Integer"
+      },
+      {
+        "name": "episode!",
+        "ordinal": 3,
+        "type_info": "Integer"
+      },
+      {
+        "name": "episode_title",
+        "ordinal": 4,
+        "type_info": "Text"
+      },
+      {
+        "name": "watched_at!",
+        "ordinal": 5,
+        "type_info": "Integer"
+      },
+      {
+        "name": "resume_position!",
+        "ordinal": 6,
+        "type_info": "Float"
+      },
+      {
+        "name": "duration",
+        "ordinal": 7,
+        "type_info": "Float"
+      },
+      {
+        "name": "completed!",
+        "ordinal": 8,
+        "type_info": "Integer"
+      },
+      {
+        "name": "source_provider",
+        "ordinal": 9,
+        "type_info": "Text"
+      },
+      {
+        "name": "quality",
+        "ordinal": 10,
+        "type_info": "Text"
+      },
+      {
+        "name": "title!",
+        "ordinal": 11,
+        "type_info": "Text"
+      },
+      {
+        "name": "kind!",
+        "ordinal": 12,
+        "type_info": "Text"
+      },
+      {
+        "name": "poster_url",
+        "ordinal": 13,
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Right": 0
+    },
+    "nullable": [
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "16899ecc5335b3ba215611cd0fa3dea08489b8aaa8e5b8259e6f6aba52117fc9"
+}

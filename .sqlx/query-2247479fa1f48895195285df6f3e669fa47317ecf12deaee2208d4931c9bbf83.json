@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT OR IGNORE INTO media (id, provider_id, title, kind)\n        VALUES (?1, coalesce(?2, 'unknown'), ?1, 'movie')\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 2
+    },
+    "nullable": []
+  },
+  "hash": "2247479fa1f48895195285df6f3e669fa47317ecf12deaee2208d4931c9bbf83"
+}

@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "\n        INSERT INTO media (\n            id, provider_id, external_id, title, kind, year, description,\n            poster_url, rating, genres, total_episodes, total_seasons,\n            anilist_id, tmdb_id, mal_id, updated_at\n        )\n        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, unixepoch())\n        ON CONFLICT(id) DO UPDATE SET\n            provider_id = excluded.provider_id,\n            external_id = coalesce(excluded.external_id, media.external_id),\n            title = excluded.title,\n            kind = excluded.kind,\n            year = coalesce(excluded.year, media.year),\n            description = coalesce(excluded.description, media.description),\n            poster_url = coalesce(excluded.poster_url, media.poster_url),\n            rating = coalesce(excluded.rating, media.rating),\n            genres = excluded.genres,\n            total_episodes = coalesce(excluded.total_episodes, media.total_episodes),\n            total_seasons = coalesce(excluded.total_seasons, media.total_seasons),\n            anilist_id = coalesce(excluded.anilist_id, media.anilist_id),\n            tmdb_id = coalesce(excluded.tmdb_id, media.tmdb_id),\n            mal_id = coalesce(excluded.mal_id, media.mal_id),\n            updated_at = unixepoch()\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 15
+    },
+    "nullable": []
+  },
+  "hash": "58f119879f266f81a34cdf4a1780f90cdcef5a241fb331f583c0b59993d1a127"
+}
