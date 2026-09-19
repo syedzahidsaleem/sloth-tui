@@ -77,12 +77,12 @@ fn test_details_screen_renders_without_crash() {
     let backend = TestBackend::new(100, 30);
     let mut terminal = Terminal::new(backend).unwrap();
     let theme = Theme::mocha();
-    let state = AppState::default();
+    let mut state = AppState::default();
 
     terminal
         .draw(|f| {
             let area = f.area();
-            details::draw(f, area, &state, &theme);
+            details::draw(f, area, &mut state, &theme);
         })
         .unwrap();
 }
