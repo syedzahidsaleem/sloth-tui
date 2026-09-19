@@ -7,6 +7,7 @@ use serde::Deserialize;
 use sqlx::{Row, SqlitePool};
 
 use crate::SlothError;
+use crate::providers::models::ProviderError;
 pub use crate::tui::state::{F1Session, F1SessionKind, F1SessionSlot};
 
 const JOLPICA_BASE_URL: &str = "https://api.jolpi.ca/ergast/f1";
@@ -99,7 +100,7 @@ fn parse_datetime(date_str: &str, time_str: Option<&str>) -> Option<DateTime<Utc
 /// Parses a raw Ergast / Jolpica JSON response into a list of [`F1Session`] items.
 pub fn parse_calendar_json(json: &str) -> Result<Vec<F1Session>, SlothError> {
     let resp: ErgastResponse = serde_json::from_str(json)
-        .map_err(|e| SlothError::Provider(format!("Failed to parse F1 calendar JSON: {e}")))?;
+        .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to parse F1 calendar JSON: {e}"))))?;
 
     let races = resp
         .mr_data
@@ -420,10 +421,10 @@ pub async fn fetch_calendar_with_pool(
                 .get(&ergast_url)
                 .send()
                 .await
-                .map_err(|e| SlothError::Provider(format!("Failed to reach F1 API: {e}")))?;
+                .map_err(|e| SlothError::Provider(ProviderError::Network(format!("Failed to reach F1 API: {e}"))))?;
             resp.text()
                 .await
-                .map_err(|e| SlothError::Provider(format!("Failed to read F1 API body: {e}")))?
+                .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to read F1 API body: {e}"))))?
         }
     };
 
