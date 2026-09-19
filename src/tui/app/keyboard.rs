@@ -820,6 +820,18 @@ impl App {
                                 } else {
                                     self.state.anime_tab.selected_episode_idx = self.state.anime_tab.selected_episode_idx.saturating_sub(1);
                                 }
+                            } else if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                match self.state.sports_tab.focus {
+                                    crate::tui::state::SportsColumnFocus::Sports => {
+                                        self.state.sports_tab.selected_sport_idx = self.state.sports_tab.selected_sport_idx.saturating_sub(1);
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Matches => {
+                                        self.state.sports_tab.selected_match_idx = self.state.sports_tab.selected_match_idx.saturating_sub(1);
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Streams => {
+                                        self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
+                                    }
+                                }
                             } else {
                                 self.action_sender.send(Action::MoveUp).ok();
                             }
@@ -833,13 +845,31 @@ impl App {
                                 } else if !self.state.anime_tab.episodes.is_empty() {
                                     self.state.anime_tab.selected_episode_idx = (self.state.anime_tab.selected_episode_idx + 1).min(self.state.anime_tab.episodes.len() - 1);
                                 }
+                            } else if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                match self.state.sports_tab.focus {
+                                    crate::tui::state::SportsColumnFocus::Sports => {
+                                        if !self.state.sports_tab.sports.is_empty() {
+                                            self.state.sports_tab.selected_sport_idx = (self.state.sports_tab.selected_sport_idx + 1).min(self.state.sports_tab.sports.len() - 1);
+                                        }
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Matches => {
+                                        if !self.state.sports_tab.matches.is_empty() {
+                                            self.state.sports_tab.selected_match_idx = (self.state.sports_tab.selected_match_idx + 1).min(self.state.sports_tab.matches.len() - 1);
+                                        }
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Streams => {
+                                        if !self.state.sports_tab.streams.is_empty() {
+                                            self.state.sports_tab.selected_stream_idx = (self.state.sports_tab.selected_stream_idx + 1).min(self.state.sports_tab.streams.len() - 1);
+                                        }
+                                    }
+                                }
                             } else {
                                 self.action_sender.send(Action::MoveDown).ok();
                             }
                         }
                         KeyCode::Left => {
                             if self.state.active_tab == crate::tui::state::Tab::Sports {
-                                self.state.sports_tab.focus = self.state.sports_tab.focus.previous();
+                                self.state.sports_tab.focus = self.state.sports_tab.focus.move_left();
                             } else if self.state.active_tab == crate::tui::state::Tab::Anime {
                                 self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Results;
                             } else {
@@ -848,7 +878,7 @@ impl App {
                         }
                         KeyCode::Right => {
                             if self.state.active_tab == crate::tui::state::Tab::Sports {
-                                self.state.sports_tab.focus = self.state.sports_tab.focus.next();
+                                self.state.sports_tab.focus = self.state.sports_tab.focus.move_right();
                             } else if self.state.active_tab == crate::tui::state::Tab::Anime {
                                 self.state.anime_tab.focus = crate::tui::state::AnimePanelFocus::Episodes;
                             } else {
@@ -958,6 +988,22 @@ impl App {
                                     crate::tui::app::anime::handle_anime_select(&mut self.state, &self.action_sender);
                                 } else {
                                     crate::tui::app::anime::handle_anime_episode_select(&mut self.state, &self.action_sender);
+                                }
+                            } else if self.state.active_tab == crate::tui::state::Tab::Sports {
+                                match self.state.sports_tab.focus {
+                                    crate::tui::state::SportsColumnFocus::Sports => {
+                                        if let Some(sport) = self.state.sports_tab.selected_sport().map(|s| s.to_string()) {
+                                            crate::tui::app::sports::handle_sport_selected(&mut self.state, &self.action_sender, sport);
+                                        }
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Matches => {
+                                        if let Some(m) = self.state.sports_tab.selected_match().cloned() {
+                                            crate::tui::app::sports::handle_match_selected(&mut self.state, &self.action_sender, m.id);
+                                        }
+                                    }
+                                    crate::tui::state::SportsColumnFocus::Streams => {
+                                        crate::tui::app::sports::handle_stream_play(&mut self.state, &self.action_sender);
+                                    }
                                 }
                             } else if self.state.search_results.is_empty()
                                 && !self.state.search_query.trim().is_empty()
@@ -1154,12 +1200,53 @@ impl App {
                         KeyCode::Char('h') | KeyCode::Char('H')
                             if self.state.active_tab == crate::tui::state::Tab::Sports =>
                         {
-                            self.state.sports_tab.focus = self.state.sports_tab.focus.previous();
+                            self.state.sports_tab.focus = self.state.sports_tab.focus.move_left();
                         }
                         KeyCode::Char('l') | KeyCode::Char('L')
                             if self.state.active_tab == crate::tui::state::Tab::Sports =>
                         {
-                            self.state.sports_tab.focus = self.state.sports_tab.focus.next();
+                            self.state.sports_tab.focus = self.state.sports_tab.focus.move_right();
+                        }
+                        KeyCode::Char('j') | KeyCode::Char('J')
+                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
+                        {
+                            match self.state.sports_tab.focus {
+                                crate::tui::state::SportsColumnFocus::Sports => {
+                                    if !self.state.sports_tab.sports.is_empty() {
+                                        self.state.sports_tab.selected_sport_idx = (self.state.sports_tab.selected_sport_idx + 1).min(self.state.sports_tab.sports.len() - 1);
+                                    }
+                                }
+                                crate::tui::state::SportsColumnFocus::Matches => {
+                                    if !self.state.sports_tab.matches.is_empty() {
+                                        self.state.sports_tab.selected_match_idx = (self.state.sports_tab.selected_match_idx + 1).min(self.state.sports_tab.matches.len() - 1);
+                                    }
+                                }
+                                crate::tui::state::SportsColumnFocus::Streams => {
+                                    if !self.state.sports_tab.streams.is_empty() {
+                                        self.state.sports_tab.selected_stream_idx = (self.state.sports_tab.selected_stream_idx + 1).min(self.state.sports_tab.streams.len() - 1);
+                                    }
+                                }
+                            }
+                        }
+                        KeyCode::Char('k') | KeyCode::Char('K')
+                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
+                        {
+                            match self.state.sports_tab.focus {
+                                crate::tui::state::SportsColumnFocus::Sports => {
+                                    self.state.sports_tab.selected_sport_idx = self.state.sports_tab.selected_sport_idx.saturating_sub(1);
+                                }
+                                crate::tui::state::SportsColumnFocus::Matches => {
+                                    self.state.sports_tab.selected_match_idx = self.state.sports_tab.selected_match_idx.saturating_sub(1);
+                                }
+                                crate::tui::state::SportsColumnFocus::Streams => {
+                                    self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
+                                }
+                            }
+                        }
+                        KeyCode::Char('r') | KeyCode::Char('R')
+                            if self.state.active_tab == crate::tui::state::Tab::Sports =>
+                        {
+                            crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
                         }
                         KeyCode::Char(c)
                             if (key.modifiers.is_empty()
@@ -1823,9 +1910,29 @@ mod tests {
         app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty()))
             .await;
         assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Streams);
+        // Ensure no wrap on right
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Streams);
+
         app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
             .await;
         assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Matches);
+        app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Sports);
+        // Ensure no wrap on left
+        app.handle_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Sports);
+
+        // Sports j / k list scrolling
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.selected_sport_idx, 1);
+        app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::empty()))
+            .await;
+        assert_eq!(app.state.sports_tab.selected_sport_idx, 0);
     }
 
     #[tokio::test]
