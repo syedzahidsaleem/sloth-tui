@@ -69,9 +69,7 @@ impl IinaPlayer {
             cmd.arg(arg);
         }
 
-        let child = cmd
-            .spawn()
-            .map_err(|e| SlothError::Internal(format!("Failed to spawn IINA: {e}")))?;
+        let child = cmd.spawn().map_err(SlothError::Io)?;
 
         tokio::time::sleep(Duration::from_millis(300)).await;
 
@@ -121,9 +119,10 @@ impl IinaPlayer {
         _resume_pos: Option<f64>,
         _config: &PlayerConfig,
     ) -> Result<Self, SlothError> {
-        Err(SlothError::Internal(
-            "IINA player is only supported on macOS".to_string(),
-        ))
+        Err(SlothError::Io(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "IINA player is only supported on macOS",
+        )))
     }
 
     pub async fn wait_for_exit(&mut self) -> Option<f64> {
