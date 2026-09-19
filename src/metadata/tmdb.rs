@@ -507,6 +507,7 @@ impl TmdbClient {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::providers::ExternalIds;
 
     #[test]
     fn test_poster_url_generation() {
