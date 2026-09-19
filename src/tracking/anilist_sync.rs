@@ -221,27 +221,48 @@ impl AniListClient {
         }
 
         // Send GraphQL mutation to AniList
-        let _: SaveEntryData = self.gql(query, variables).await?;
-
-        // Update local SQLite cache: progress=episode, dirty=0
-        if let Some(p) = pool {
-            sqlx::query(
-                r#"
-                INSERT INTO anilist_entries (anilist_id, progress, dirty, synced_at)
-                VALUES (?1, ?2, 0, unixepoch())
-                ON CONFLICT(anilist_id) DO UPDATE SET
-                    progress = excluded.progress,
-                    dirty = 0,
-                    synced_at = unixepoch()
-                "#,
-            )
-            .bind(anilist_id as i64)
-            .bind(episode as i64)
-            .execute(p)
-            .await?;
+        match self.gql::<SaveEntryData>(query, variables).await {
+            Ok(_) => {
+                // Update local SQLite cache: progress=episode, dirty=0
+                if let Some(p) = pool {
+                    let _ = sqlx::query(
+                        r#"
+                        INSERT INTO anilist_entries (anilist_id, progress, dirty, synced_at)
+                        VALUES (?1, ?2, 0, unixepoch())
+                        ON CONFLICT(anilist_id) DO UPDATE SET
+                            progress = excluded.progress,
+                            dirty = 0,
+                            synced_at = unixepoch()
+                        "#,
+                    )
+                    .bind(anilist_id as i64)
+                    .bind(episode as i64)
+                    .execute(p)
+                    .await;
+                }
+                Ok(())
+            }
+            Err(err) => {
+                // Queue as dirty if sync fails (retry later)
+                if let Some(p) = pool {
+                    let _ = sqlx::query(
+                        r#"
+                        INSERT INTO anilist_entries (anilist_id, progress, dirty, synced_at)
+                        VALUES (?1, ?2, 1, unixepoch())
+                        ON CONFLICT(anilist_id) DO UPDATE SET
+                            progress = excluded.progress,
+                            dirty = 1,
+                            synced_at = unixepoch()
+                        "#,
+                    )
+                    .bind(anilist_id as i64)
+                    .bind(episode as i64)
+                    .execute(p)
+                    .await;
+                }
+                Err(err)
+            }
         }
-
-        Ok(())
     }
 
     /// Fetches the user's anime list from AniList and stores it in `anilist_entries`.
