@@ -17,6 +17,7 @@ mod playback;
 mod requests;
 mod run;
 mod search;
+pub mod sports;
 mod system;
 mod tv;
 
