@@ -175,6 +175,8 @@ pub enum Action {
     F1SessionSelected(Box<crate::tui::state::F1Session>),
     SearchResultsReceived(Vec<crate::providers::models::Media>),
     ResumePosition(f64),
+    PlaybackStarted,
+    AnimeEpisodesReceived(Vec<crate::providers::models::EpisodeRef>),
 }
 
 #[cfg(test)]
