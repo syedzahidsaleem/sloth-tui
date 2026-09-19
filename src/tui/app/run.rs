@@ -51,6 +51,7 @@ impl App {
             self.action_sender.send(Action::CheckForUpdates).ok();
         }
         self.state.active_screen = Screen::Home;
+        self.discord_rpc.set_browsing();
 
         self.state.available_players = crate::tui::player::detect();
         if (self.state.default_player.is_none()
@@ -121,20 +122,24 @@ impl App {
             tokio::select! {
                 Some(action) = events.next() => {
                     if let Some(quit) = self.handle_action(action).await {
+                        self.discord_rpc.clear();
                         return Ok(quit);
                     }
                     while let Ok(action) = events.try_recv() {
                         if let Some(quit) = self.handle_action(action).await {
+                            self.discord_rpc.clear();
                             return Ok(quit);
                         }
                     }
                 }
                 Some(action) = self.action_receiver.recv() => {
                     if let Some(quit) = self.handle_action(action).await {
+                        self.discord_rpc.clear();
                         return Ok(quit);
                     }
                     while let Ok(action) = self.action_receiver.try_recv() {
                         if let Some(quit) = self.handle_action(action).await {
+                            self.discord_rpc.clear();
                             return Ok(quit);
                         }
                     }
@@ -573,10 +578,13 @@ impl App {
             Action::ResumePosition(_pos) => {}
             Action::PlaybackStarted => {
                 self.state.is_loading = false;
+                let (media, episode) = self.current_playback_media();
+                self.discord_rpc.set_watching(&media, episode.as_ref());
             }
             Action::PlaybackEnded { resume_position_secs } => {
                 self.state.is_playing = false;
                 self.handle_playback_ended(resume_position_secs);
+                self.discord_rpc.set_browsing();
             }
             Action::AnimeEpisodesReceived(episodes) => {
                 self.state.anime_tab.episodes = episodes;
