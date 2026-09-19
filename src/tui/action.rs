@@ -184,6 +184,7 @@ pub enum Action {
         authenticated: bool,
         username: Option<String>,
     },
+    MetadataEnriched(Box<crate::providers::models::Media>),
 }
 
 #[cfg(test)]
