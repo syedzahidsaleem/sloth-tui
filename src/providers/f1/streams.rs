@@ -60,7 +60,7 @@ pub fn parse_f1_m3u(content: &str) -> Vec<StreamUrl> {
 /// Fetches sports channels from iptv-org and returns Formula 1 streams.
 pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
     let parser = M3UParser::new();
-    match parser.fetch_playlist(SPORTS_M3U_URL).await {
+    match parser.fetch_playlist(SPORTS_M3U_URL).await.map_err(|e| e.to_string()) {
         Ok(channels) => {
             let streams = channels
                 .into_iter()
@@ -81,8 +81,8 @@ pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
                 .collect();
             Ok(streams)
         }
-        Err(e) => {
-            tracing::warn!("Failed to fetch iptv-org sports playlist: {e}, falling back to direct HTTP");
+        Err(err_msg) => {
+            tracing::warn!("Failed to fetch iptv-org sports playlist: {err_msg}, falling back to direct HTTP");
             let client = crate::net::http_client_builder()
                 .timeout(Duration::from_secs(10))
                 .build()
