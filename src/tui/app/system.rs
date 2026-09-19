@@ -37,6 +37,16 @@ impl App {
                     self.state.dirty = true;
                 }
 
+                if self.state.active_tab == crate::tui::state::Tab::Sports {
+                    let should_refresh = match self.state.sports_tab.last_refresh {
+                        Some(last) => last.elapsed() >= std::time::Duration::from_secs(300),
+                        None => self.state.sports_tab.matches.is_empty(),
+                    };
+                    if should_refresh && !self.state.is_loading {
+                        crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
+                    }
+                }
+
                 if self.state.input_mode == crate::tui::state::InputMode::Editing
                     && self.state.active_screen == crate::tui::state::Screen::Home
                 {
