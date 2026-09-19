@@ -46,6 +46,8 @@ pub struct Config {
     pub default_player: Option<String>,
     /// Optional custom download directory.
     pub download_dir: Option<String>,
+    /// Whether Discord Rich Presence is enabled.
+    pub discord_rpc_enabled: bool,
 }
 
 impl Default for Config {
@@ -68,6 +70,7 @@ impl Default for Config {
             addons_enabled: false,
             default_player: None,
             download_dir: None,
+            discord_rpc_enabled: true,
         }
     }
 }
