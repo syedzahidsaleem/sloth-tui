@@ -180,6 +180,11 @@ impl AniListClient {
         Ok(res.viewer.map(|v| v.name))
     }
 
+    /// Alias for get_current_username.
+    pub async fn get_authenticated_user(&self) -> Result<Option<String>, SlothError> {
+        self.get_current_username().await
+    }
+
     /// Marks an episode as watched on AniList and updates local `anilist_entries` cache.
     pub async fn mark_episode_watched(
         &self,
