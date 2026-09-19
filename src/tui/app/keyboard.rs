@@ -1953,4 +1953,84 @@ mod tests {
             .await;
         assert_eq!(app.state.anime_tab.focus, crate::tui::state::AnimePanelFocus::Results);
     }
+
+    #[tokio::test]
+    async fn test_sports_tab_keys() {
+        let mut app = App::new();
+        app.state.active_screen = crate::tui::state::Screen::Home;
+        app.state.input_mode = InputMode::Normal;
+        app.state.active_tab = crate::tui::state::Tab::Sports;
+
+        // Populate test matches and streams
+        app.state.sports_tab.matches.push(crate::tui::state::LiveMatch {
+            id: "match-1".to_string(),
+            title: "Arsenal vs Chelsea".to_string(),
+            category: "football".to_string(),
+            teams: Some(("Arsenal".to_string(), "Chelsea".to_string())),
+            competition: Some("Premier League".to_string()),
+            starts_at: Some(chrono::Utc::now()),
+            is_popular: true,
+            poster: None,
+            streams: Vec::new(),
+        });
+        app.state.sports_tab.matches.push(crate::tui::state::LiveMatch {
+            id: "match-2".to_string(),
+            title: "Lakers vs Warriors".to_string(),
+            category: "basketball".to_string(),
+            teams: Some(("Lakers".to_string(), "Warriors".to_string())),
+            competition: Some("NBA".to_string()),
+            starts_at: None,
+            is_popular: false,
+            poster: None,
+            streams: Vec::new(),
+        });
+
+        app.state.sports_tab.streams.push(crate::tui::state::MatchStream {
+            id: "stream-1".to_string(),
+            hd_url: Some("https://streamed.su/hd.m3u8".to_string()),
+            sd_url: None,
+            embed_url: None,
+            language: Some("English".to_string()),
+        });
+        app.state.sports_tab.streams.push(crate::tui::state::MatchStream {
+            id: "stream-2".to_string(),
+            hd_url: None,
+            sd_url: Some("https://streamed.su/sd.m3u8".to_string()),
+            embed_url: None,
+            language: Some("Spanish".to_string()),
+        });
+
+        // Test column focus movement: Sports -> Matches -> Streams
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Sports);
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Matches);
+
+        // Test scrolling in Matches
+        assert_eq!(app.state.sports_tab.selected_match_idx, 0);
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.selected_match_idx, 1);
+        app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.selected_match_idx, 0);
+
+        // Test move to Streams
+        app.handle_key(KeyEvent::new(KeyCode::Char('l'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.focus, crate::tui::state::SportsColumnFocus::Streams);
+
+        // Test scrolling in Streams
+        assert_eq!(app.state.sports_tab.selected_stream_idx, 0);
+        app.handle_key(KeyEvent::new(KeyCode::Char('j'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.selected_stream_idx, 1);
+        app.handle_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::empty())).await;
+        assert_eq!(app.state.sports_tab.selected_stream_idx, 0);
+
+        // Test Enter in Streams triggers playback
+        app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::empty())).await;
+        let mut dispatched = false;
+        while let Ok(action) = app.action_receiver.try_recv() {
+            if matches!(action, Action::DispatchPlayback(..)) {
+                dispatched = true;
+            }
+        }
+        assert!(dispatched, "Enter on stream should dispatch playback action");
+    }
 }
