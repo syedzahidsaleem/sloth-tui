@@ -6,6 +6,7 @@ use crate::providers::models::RequestContext;
 use crate::tui::{action::Action, state::AppState, theme::Theme};
 
 mod addons;
+pub mod anime;
 mod download;
 mod favorites;
 mod keyboard;
