@@ -180,6 +180,10 @@ pub enum Action {
         resume_position_secs: Option<f64>,
     },
     AnimeEpisodesReceived(Vec<crate::providers::models::EpisodeRef>),
+    AniListAuthStatus {
+        authenticated: bool,
+        username: Option<String>,
+    },
 }
 
 #[cfg(test)]
