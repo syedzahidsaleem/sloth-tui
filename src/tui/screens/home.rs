@@ -1441,13 +1441,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             return;
         }
         Tab::F1 => {
-            render_placeholder_tab(
-                frame,
-                content_area,
-                state.active_tab,
-                theme,
-                state.basic_terminal,
-            );
+            crate::tui::screens::f1::render(frame, content_area, state, theme);
             if state.show_settings_popup {
                 crate::tui::widgets::settings::draw(frame, area, state, theme);
             }
