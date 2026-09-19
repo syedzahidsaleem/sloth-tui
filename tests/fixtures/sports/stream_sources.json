@@ -1,0 +1,18 @@
+[
+  {
+    "id": "stream-1",
+    "streamNo": 1,
+    "language": "English",
+    "hdUrl": "https://streamed.su/hls/arsenal-chelsea/hd.m3u8",
+    "sdUrl": "https://streamed.su/hls/arsenal-chelsea/sd.m3u8",
+    "embedUrl": "https://streamed.su/embed/arsenal-chelsea"
+  },
+  {
+    "id": "stream-2",
+    "streamNo": 2,
+    "language": "Spanish",
+    "hdUrl": "https://streamed.su/hls/arsenal-chelsea-es/hd.m3u8",
+    "sdUrl": "https://streamed.su/hls/arsenal-chelsea-es/sd.m3u8",
+    "embedUrl": "https://streamed.su/embed/arsenal-chelsea-es"
+  }
+]
