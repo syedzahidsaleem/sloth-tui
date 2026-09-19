@@ -347,7 +347,7 @@ fn render_row(
 }
 
 fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
-    let row_rects = settings_row_rects_in_area(area, 3);
+    let row_rects = settings_row_rects_in_area(area, 4);
     let has_active_popup = has_active_settings_popup(state);
 
     if let Some(&row_area) = row_rects.first() {
@@ -467,6 +467,28 @@ fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, them
                 is_selected,
                 has_active_popup,
                 label: "Download Folder",
+                value_spans,
+            },
+            theme,
+            state.basic_terminal,
+        );
+    }
+
+    if let Some(&row_area) = row_rects.get(3) {
+        let is_selected = state.settings_selected_row == 3;
+        let value_spans = on_off_spans(
+            state.discord_rpc_enabled,
+            has_active_popup,
+            theme,
+            state.basic_terminal,
+        );
+        render_row(
+            frame,
+            row_area,
+            SettingRow {
+                is_selected,
+                has_active_popup,
+                label: "Discord Rich Presence",
                 value_spans,
             },
             theme,
@@ -1058,13 +1080,16 @@ mod tests {
         assert_eq!(cat_modes, Some(SettingsCategory::ContentModes));
 
         let row_rects = settings_row_rects(popup, SettingsCategory::General);
-        assert_eq!(row_rects.len(), 3);
+        assert_eq!(row_rects.len(), 4);
 
         let clicked_row = settings_row_at(popup, SettingsCategory::General, 40, row_rects[0].y);
         assert_eq!(clicked_row, Some(0));
 
         let clicked_row1 = settings_row_at(popup, SettingsCategory::General, 40, row_rects[1].y);
         assert_eq!(clicked_row1, Some(1));
+
+        let clicked_row3 = settings_row_at(popup, SettingsCategory::General, 40, row_rects[3].y);
+        assert_eq!(clicked_row3, Some(3));
 
         let compact_popup = Rect::new(2, 2, 54, 16);
         assert_eq!(
