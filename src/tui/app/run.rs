@@ -532,6 +532,10 @@ impl App {
             }
             Action::MatchListReceived(matches) => {
                 self.state.sports_tab.matches = matches;
+                self.state.is_loading = false;
+                if self.state.sports_tab.selected_match_idx >= self.state.sports_tab.matches.len() {
+                    self.state.sports_tab.selected_match_idx = 0;
+                }
             }
             Action::MatchSelected(id) => {
                 if let Some(pos) = self.state.sports_tab.matches.iter().position(|m| m.id == id) {
@@ -540,6 +544,10 @@ impl App {
             }
             Action::StreamListReceived(streams) => {
                 self.state.sports_tab.streams = streams;
+                self.state.is_loading = false;
+                if self.state.sports_tab.selected_stream_idx >= self.state.sports_tab.streams.len() {
+                    self.state.sports_tab.selected_stream_idx = 0;
+                }
             }
             Action::F1CalendarLoad => {
                 self.state.f1_tab.loading = true;
