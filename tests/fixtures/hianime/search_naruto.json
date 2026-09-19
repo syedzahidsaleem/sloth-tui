@@ -1,0 +1,28 @@
+{
+  "data": {
+    "animes": [
+      {
+        "id": "naruto-677",
+        "name": "Naruto",
+        "poster": "https://img.flawlessfiles.com/_r/300x400/100/5d/90/5d909b307ff49652a912e528b97d3126/5d909b307ff49652a912e528b97d3126.jpg",
+        "rating": "8.0",
+        "type": "TV",
+        "episodes": {
+          "sub": 220,
+          "dub": 220
+        }
+      },
+      {
+        "id": "naruto-shippuden-355",
+        "name": "Naruto: Shippuden",
+        "poster": "https://img.flawlessfiles.com/_r/300x400/100/9b/64/9b646399120616142750e7041faea7ce/9b646399120616142750e7041faea7ce.jpg",
+        "rating": "8.7",
+        "type": "TV",
+        "episodes": {
+          "sub": 500,
+          "dub": 500
+        }
+      }
+    ]
+  }
+}
