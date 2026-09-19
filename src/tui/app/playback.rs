@@ -1105,20 +1105,40 @@ impl App {
         let title = history_item.as_ref().map(|h| h.title.clone());
 
         if let Some(pos) = resume_position_secs {
+            let duration = history_item
+                .as_ref()
+                .and_then(|h| h.duration_seconds)
+                .map(|d| d as f64);
+
+            let is_completed = match duration {
+                Some(d) if d > 0.0 => (pos / d) >= 0.85,
+                _ => false,
+            };
+
             let entry = crate::db::WatchEntry {
                 media_id: media_id.clone(),
                 season,
                 episode,
                 episode_title: title,
                 resume_position: pos,
-                duration: history_item
-                    .as_ref()
-                    .and_then(|h| h.duration_seconds)
-                    .map(|d| d as f64),
-                completed: false,
+                duration,
+                completed: is_completed,
                 source_provider: history_item.as_ref().map(|h| h.provider.clone()),
                 quality: None,
             };
+
+            let is_anime = self
+                .state
+                .selected_details
+                .as_ref()
+                .map(|d| d.media_type == crate::providers::models::MediaType::Anime)
+                .unwrap_or_else(|| {
+                    self.state.active_tab == crate::tui::state::Tab::Anime
+                        || history_item
+                            .as_ref()
+                            .map(|h| h.provider.to_lowercase().contains("anime"))
+                            .unwrap_or(false)
+                });
 
             tokio::spawn(async move {
                 let db_path = crate::config::db_path();
@@ -1129,7 +1149,9 @@ impl App {
                 }
 
                 let _ = crate::tracking::sync_trakt(&media_id, season, episode, pos).await;
-                let _ = crate::tracking::sync_anilist(&media_id, episode, pos).await;
+                if is_anime {
+                    let _ = crate::tracking::sync_anilist(&media_id, episode, pos, duration).await;
+                }
             });
         }
     }
