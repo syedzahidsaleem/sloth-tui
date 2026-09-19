@@ -2,13 +2,16 @@ use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
-use sloth_tui::providers::anime::HiAnimeProvider;
+use sloth_tui::config::Config;
+use sloth_tui::providers::anime::{AllAnimeProvider, HiAnimeProvider};
 use sloth_tui::providers::models::{EpisodeRef, ExternalIds, Media, MediaType, Quality};
-use sloth_tui::providers::Provider;
+use sloth_tui::providers::{Provider, ProviderRegistry};
 
-const SEARCH_JSON: &str = include_str!("fixtures/hianime/search_naruto.json");
-const EPISODES_JSON: &str = include_str!("fixtures/hianime/episodes.json");
-const SOURCES_JSON: &str = include_str!("fixtures/hianime/sources_sub.json");
+const HIANIME_SEARCH_JSON: &str = include_str!("fixtures/hianime/search_naruto.json");
+const HIANIME_EPISODES_JSON: &str = include_str!("fixtures/hianime/episodes.json");
+const HIANIME_SOURCES_JSON: &str = include_str!("fixtures/hianime/sources_sub.json");
+const ALLANIME_SEARCH_JSON: &str = include_str!("fixtures/allanime/search_one_piece.json");
+const ALLANIME_SOURCES_JSON: &str = include_str!("fixtures/allanime/episode_sources.json");
 
 /// Spawns a lightweight local mock server returning hardcoded test fixture JSON.
 async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
@@ -28,7 +31,7 @@ async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
             };
 
             tokio::spawn(async move {
-                let mut buf = [0u8; 4096];
+                let mut buf = [0u8; 8192];
                 let n = match socket.read(&mut buf).await {
                     Ok(n) if n > 0 => n,
                     _ => return,
@@ -36,14 +39,29 @@ async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
                 let req = String::from_utf8_lossy(&buf[..n]);
                 let first_line = req.lines().next().unwrap_or("");
 
-                let (status, body) = if first_line.starts_with("HEAD /") {
+                let (status, body) = if first_line.starts_with("HEAD /") || first_line.starts_with("GET / ") {
                     ("200 OK", "")
                 } else if first_line.contains("/api/v2/hianime/search") {
-                    ("200 OK", SEARCH_JSON)
+                    if first_line.contains("q=Naruto") {
+                        ("200 OK", HIANIME_SEARCH_JSON)
+                    } else {
+                        // Return empty array for queries other than Naruto
+                        ("200 OK", r#"{"data":{"animes":[]}}"#)
+                    }
                 } else if first_line.contains("/api/v2/hianime/episodes/") {
-                    ("200 OK", EPISODES_JSON)
+                    ("200 OK", HIANIME_EPISODES_JSON)
                 } else if first_line.contains("/api/v2/hianime/episode/sources") {
-                    ("200 OK", SOURCES_JSON)
+                    ("200 OK", HIANIME_SOURCES_JSON)
+                } else if first_line.starts_with("POST /api") || first_line.starts_with("POST / ") {
+                    if req.contains("sourceUrls") || req.contains("episodeString") {
+                        ("200 OK", ALLANIME_SOURCES_JSON)
+                    } else if req.contains("SearchInput") || req.contains("shows") {
+                        ("200 OK", ALLANIME_SEARCH_JSON)
+                    } else {
+                        ("200 OK", "{}")
+                    }
+                } else if first_line.starts_with("GET /api") {
+                    ("200 OK", "")
                 } else {
                     ("404 Not Found", "{}")
                 };
@@ -61,13 +79,13 @@ async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
     (base_url, handle)
 }
 
-fn create_test_media(id: &str, title: &str) -> Media {
+fn create_test_media(id: &str, title: &str, provider_id: &'static str) -> Media {
     Media {
         id: id.to_string(),
         title: title.to_string(),
         media_type: MediaType::Anime,
         year: Some(2002),
-        overview: Some("Naruto Uzumaki is a young ninja...".to_string()),
+        overview: Some("Test anime description".to_string()),
         poster_url: None,
         backdrop_url: None,
         genres: vec!["Action".to_string(), "Adventure".to_string()],
@@ -75,7 +93,7 @@ fn create_test_media(id: &str, title: &str) -> Media {
         duration_secs: None,
         seasons_count: Some(1),
         episodes_count: Some(220),
-        provider_id: "hianime",
+        provider_id,
         external_ids: ExternalIds::default(),
         cast: Vec::new(),
     }
@@ -110,7 +128,7 @@ async fn test_resolve_episode_1_returns_stream_url() {
     let client = Arc::new(reqwest::Client::new());
     let provider = HiAnimeProvider::with_base_url(client, base_url);
 
-    let media = create_test_media("naruto-677", "Naruto");
+    let media = create_test_media("naruto-677", "Naruto", "hianime");
 
     // Case a: episode is None, should resolve episode 1
     let streams = provider
@@ -176,7 +194,7 @@ async fn test_episodes_listing() {
     let client = Arc::new(reqwest::Client::new());
     let provider = HiAnimeProvider::with_base_url(client, base_url);
 
-    let media = create_test_media("naruto-677", "Naruto");
+    let media = create_test_media("naruto-677", "Naruto", "hianime");
     let episodes = provider
         .episodes(&media, 1)
         .await
@@ -190,4 +208,71 @@ async fn test_episodes_listing() {
     );
     assert_eq!(episodes[1].episode, 2);
     assert_eq!(episodes[2].episode, 3);
+}
+
+#[tokio::test]
+async fn test_allanime_search_returns_results_for_one_piece() {
+    let (base_url, _server) = spawn_mock_server().await;
+    let client = Arc::new(reqwest::Client::new());
+    let provider = AllAnimeProvider::with_base_url(client, base_url);
+
+    let results = provider
+        .search("One Piece", MediaType::Anime)
+        .await
+        .expect("Search should succeed");
+
+    assert!(!results.is_empty(), "AllAnime search should return results");
+    assert_eq!(results[0].id, "ReiveDemon64");
+    assert_eq!(results[0].title, "One Piece");
+    assert_eq!(results[0].media_type, MediaType::Anime);
+    assert_eq!(results[0].provider_id, "allanime");
+    assert_eq!(results[0].rating, Some(8.8));
+    assert_eq!(results[0].episodes_count, Some(1120));
+
+    assert_eq!(results[1].id, "FilmRed123");
+    assert_eq!(results[1].title, "One Piece Film: Red");
+}
+
+#[tokio::test]
+async fn test_allanime_resolve_episode_stream() {
+    let (base_url, _server) = spawn_mock_server().await;
+    let client = Arc::new(reqwest::Client::new());
+    let provider = AllAnimeProvider::with_base_url(client, base_url);
+
+    let media = create_test_media("ReiveDemon64", "One Piece", "allanime");
+    let streams = provider
+        .resolve(&media, None)
+        .await
+        .expect("AllAnime resolve should succeed");
+
+    assert!(!streams.is_empty(), "Streams should not be empty");
+    let stream = &streams[0];
+    assert!(stream.url.contains("onepiece-ep1.m3u8"));
+    assert!(stream.is_hls);
+    assert_eq!(stream.provider_id, "allanime");
+}
+
+#[tokio::test]
+async fn test_fallback_to_allanime_when_hianime_returns_empty_results() {
+    let (base_url, _server) = spawn_mock_server().await;
+    let client = Arc::new(reqwest::Client::new());
+
+    let hianime = Arc::new(HiAnimeProvider::with_base_url(
+        Arc::clone(&client),
+        base_url.clone(),
+    ));
+    let allanime = Arc::new(AllAnimeProvider::with_base_url(client, base_url));
+
+    let mut registry = ProviderRegistry::new(&Config::default());
+    registry.anime_chain = vec![hianime, allanime];
+
+    // Query "One Piece" — HiAnime returns empty result, AllAnime returns One Piece
+    let search_results = registry.search("One Piece", MediaType::Anime).await;
+
+    assert!(
+        !search_results.is_empty(),
+        "Fallback should return AllAnime results"
+    );
+    assert_eq!(search_results[0].title, "One Piece");
+    assert_eq!(search_results[0].provider_id, "allanime");
 }
