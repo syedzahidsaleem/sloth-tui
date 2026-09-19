@@ -1,0 +1,30 @@
+{
+  "data": {
+    "shows": {
+      "edges": [
+        {
+          "_id": "ReiveDemon64",
+          "name": "One Piece",
+          "englishName": "One Piece",
+          "thumbnail": "https://wp.youtube-anime.com/aln.youtube-anime.com/images/120938.jpg",
+          "score": 8.8,
+          "availableEpisodes": {
+            "sub": 1120,
+            "dub": 1085
+          }
+        },
+        {
+          "_id": "FilmRed123",
+          "name": "One Piece Film: Red",
+          "englishName": "One Piece Film: Red",
+          "thumbnail": "https://wp.youtube-anime.com/aln.youtube-anime.com/images/filmred.jpg",
+          "score": 7.9,
+          "availableEpisodes": {
+            "sub": 1,
+            "dub": 1
+          }
+        }
+      ]
+    }
+  }
+}
