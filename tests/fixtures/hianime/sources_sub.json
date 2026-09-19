@@ -1,0 +1,22 @@
+{
+  "data": {
+    "sources": [
+      {
+        "url": "https://megacloud.tv/embed-2/e-1/stream/master.m3u8",
+        "type": "hls"
+      }
+    ],
+    "tracks": [
+      {
+        "file": "https://megacloud.tv/subtitles/naruto-ep-1-english.vtt",
+        "kind": "captions",
+        "label": "English"
+      },
+      {
+        "file": "https://megacloud.tv/subtitles/naruto-ep-1-spanish.vtt",
+        "kind": "captions",
+        "label": "Spanish"
+      }
+    ]
+  }
+}
