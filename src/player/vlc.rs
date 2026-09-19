@@ -53,9 +53,7 @@ impl VlcPlayer {
             cmd.arg(arg);
         }
 
-        let child = cmd
-            .spawn()
-            .map_err(|e| SlothError::Internal(format!("Failed to spawn VLC: {e}")))?;
+        let child = cmd.spawn().map_err(SlothError::Io)?;
 
         Ok(Self { child })
     }
