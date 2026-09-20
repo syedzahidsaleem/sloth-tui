@@ -165,6 +165,7 @@ async fn test_sqlite_media_upsert() {
             mal: None,
             anilist: None,
             tvdb: None,
+            trakt: None,
         },
         cast: vec![CastMember {
             name: "Matthew McConaughey".to_string(),
@@ -234,6 +235,7 @@ fn test_details_screen_shows_tmdb_rating_and_attribution() {
                 mal: None,
                 anilist: None,
                 tvdb: None,
+                trakt: None,
             },
             cast: vec![
                 CastMember {
