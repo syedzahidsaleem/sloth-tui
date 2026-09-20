@@ -347,7 +347,7 @@ fn render_row(
 }
 
 fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
-    let row_rects = settings_row_rects_in_area(area, 4);
+    let row_rects = settings_row_rects_in_area(area, 6);
     let has_active_popup = has_active_settings_popup(state);
 
     if let Some(&row_area) = row_rects.first() {
@@ -489,6 +489,56 @@ fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, them
                 is_selected,
                 has_active_popup,
                 label: "Discord Rich Presence",
+                value_spans,
+            },
+            theme,
+            state.basic_terminal,
+        );
+    }
+
+    if let Some(&row_area) = row_rects.get(4) {
+        let is_selected = state.settings_selected_row == 4;
+        let value_spans = on_off_spans(
+            state.notifications_enabled,
+            has_active_popup,
+            theme,
+            state.basic_terminal,
+        );
+        render_row(
+            frame,
+            row_area,
+            SettingRow {
+                is_selected,
+                has_active_popup,
+                label: "Notifications",
+                value_spans,
+            },
+            theme,
+            state.basic_terminal,
+        );
+    }
+
+    if let Some(&row_area) = row_rects.get(5) {
+        let is_selected = state.settings_selected_row == 5;
+        let arrow = if state.basic_terminal { "v" } else { "▼" };
+        let lead_time_str = format!("{} min {}", state.f1_lead_time_minutes, arrow);
+        let value_spans = vec![Span::styled(
+            lead_time_str,
+            if has_active_popup {
+                theme.muted
+            } else if state.basic_terminal {
+                theme.text.add_modifier(Modifier::BOLD)
+            } else {
+                theme.accent.add_modifier(Modifier::BOLD)
+            },
+        )];
+        render_row(
+            frame,
+            row_area,
+            SettingRow {
+                is_selected,
+                has_active_popup,
+                label: "F1 Alert Lead Time",
                 value_spans,
             },
             theme,
@@ -1080,7 +1130,7 @@ mod tests {
         assert_eq!(cat_modes, Some(SettingsCategory::ContentModes));
 
         let row_rects = settings_row_rects(popup, SettingsCategory::General);
-        assert_eq!(row_rects.len(), 4);
+        assert_eq!(row_rects.len(), 6);
 
         let clicked_row = settings_row_at(popup, SettingsCategory::General, 40, row_rects[0].y);
         assert_eq!(clicked_row, Some(0));
@@ -1090,6 +1140,12 @@ mod tests {
 
         let clicked_row3 = settings_row_at(popup, SettingsCategory::General, 40, row_rects[3].y);
         assert_eq!(clicked_row3, Some(3));
+
+        let clicked_row4 = settings_row_at(popup, SettingsCategory::General, 40, row_rects[4].y);
+        assert_eq!(clicked_row4, Some(4));
+
+        let clicked_row5 = settings_row_at(popup, SettingsCategory::General, 40, row_rects[5].y);
+        assert_eq!(clicked_row5, Some(5));
 
         let compact_popup = Rect::new(2, 2, 54, 16);
         assert_eq!(
