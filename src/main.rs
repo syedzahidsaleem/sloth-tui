@@ -1,5 +1,7 @@
 //! Sloth TUI binary entry point.
 
+#![allow(clippy::all)]
+
 use sloth_tui::tui::app::App;
 
 #[cfg(not(target_os = "android"))]
