@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+
+PackageIdentifier: syedzahidsaleem.sloth-tui
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: Syed Zahid Saleem
+PublisherUrl: https://github.com/syedzahidsaleem
+PublisherSupportUrl: https://github.com/syedzahidsaleem/sloth-tui/issues
+Author: Syed Zahid Saleem
+PackageName: Sloth
+PackageUrl: https://github.com/syedzahidsaleem/sloth-tui
+License: MIT OR Apache-2.0
+LicenseUrl: https://github.com/syedzahidsaleem/sloth-tui/blob/main/LICENSE
+Copyright: Copyright (c) 2026 Syed Zahid Saleem
+ShortDescription: Terminal interface for movies, anime, sports, F1, and live TV — zero cost, always fast.
+Description: Sloth is a keyboard-driven, high-performance TUI streaming aggregator built in Rust with Ratatui and powered by mpv. It unifies movies, television, anime, live global sports, Formula 1, and IPTV into a single terminal cockpit with automatic stream resolution, cloud sync, background notifications, and Discord Rich Presence.
+Moniker: sloth-tui
+Tags:
+  - streaming
+  - tui
+  - terminal
+  - movies
+  - anime
+  - sports
+  - f1
+  - iptv
+  - mpv
+ReleaseNotesUrl: https://github.com/syedzahidsaleem/sloth-tui/releases/tag/v0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0
