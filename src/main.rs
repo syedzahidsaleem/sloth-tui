@@ -81,7 +81,8 @@ async fn main() -> std::io::Result<()> {
         println!("    sloth-tui [OPTIONS]\n");
         println!("OPTIONS:");
         println!("    -h, --help           Print help information");
-        println!("    -v, -V, --version    Print version information\n");
+        println!("    -v, -V, --version    Print version information");
+        println!("    -q, --quiet          Suppress startup banner\n");
         println!("ENVIRONMENT VARIABLES:");
         println!("    SLOTH_LOG               Log level (off, error, warn, info, debug, trace)");
         println!("    SLOTH_THEME             Theme name (e.g. catppuccin, dracula, nord, etc.)");
@@ -105,6 +106,25 @@ async fn main() -> std::io::Result<()> {
         return Ok(());
     }
 
+    let is_quiet = args.iter().any(|arg| arg == "--quiet" || arg == "-q");
+
+    if !is_quiet && std::io::IsTerminal::is_terminal(&std::io::stdout()) {
+        println!(
+            r#"
+  ███████╗██╗      ██████╗ ████████╗██╗  ██╗
+  ██╔════╝██║     ██╔═══██╗╚══██╔══╝██║  ██║
+  ███████╗██║     ██║   ██║   ██║   ███████║
+  ╚════██║██║     ██║   ██║   ██║   ██╔══██║
+  ███████║███████╗╚██████╔╝   ██║   ██║  ██║
+  ╚══════╝╚══════╝ ╚═════╝    ╚═╝   ╚═╝  ╚═╝
+  Sloth v{} — Terminal Entertainment Hub
+  Loading providers...
+"#,
+            env!("CARGO_PKG_VERSION")
+        );
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+    }
+
     sloth_tui::logging::init();
 
     std::panic::set_hook(Box::new(|info| {
@@ -112,6 +132,17 @@ async fn main() -> std::io::Result<()> {
         restore_terminal();
         eprintln!("{info}");
     }));
+
+    let config = sloth_tui::config::load();
+    let db_path = sloth_tui::config::db_path();
+    if let Ok(pool) = sloth_tui::db::open(&db_path).await {
+        if config.notifications.enabled {
+            tokio::spawn(sloth_tui::daemon::notifier::run_notifier(
+                pool.clone(),
+                config.notifications.clone(),
+            ));
+        }
+    }
 
     let stdout = std::io::stdout();
     let backend =
