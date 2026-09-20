@@ -399,7 +399,9 @@ impl App {
             | Action::ToggleProvider(..)
             | Action::CheckBdixNetwork
             | Action::BdixProbeResult { .. }
-            | Action::AniListAuthStatus { .. } => {
+            | Action::AniListAuthStatus { .. }
+            | Action::TraktAuthStatus { .. }
+            | Action::TraktDeviceCodeReceived { .. } => {
                 self.handle_system(action).await;
             }
 
