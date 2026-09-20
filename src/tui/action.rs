@@ -184,6 +184,14 @@ pub enum Action {
         authenticated: bool,
         username: Option<String>,
     },
+    TraktAuthStatus {
+        authenticated: bool,
+        username: Option<String>,
+    },
+    TraktDeviceCodeReceived {
+        user_code: String,
+        verification_url: String,
+    },
     MetadataEnriched(Box<crate::providers::models::Media>),
 }
 
