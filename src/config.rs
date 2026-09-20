@@ -100,23 +100,65 @@ impl Default for NotificationsConfig {
     }
 }
 
+/// Supported player backends for configuration and auto-detection.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum PlayerBackend {
+    /// Auto-detect player in order mpv -> vlc -> iina -> celluloid.
+    #[default]
+    Auto,
+    /// MPV player.
+    Mpv,
+    /// VLC media player.
+    Vlc,
+    /// IINA media player (macOS).
+    Iina,
+}
+
+impl PlayerBackend {
+    /// Returns display label for the backend.
+    pub fn label(&self) -> &'static str {
+        match self {
+            Self::Auto => "Auto",
+            Self::Mpv => "mpv",
+            Self::Vlc => "VLC",
+            Self::Iina => "IINA (macOS)",
+        }
+    }
+}
+
 /// Player configuration settings.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PlayerConfig {
+    /// Selected player backend (Auto, Mpv, Vlc, Iina).
+    #[serde(default)]
+    pub backend: PlayerBackend,
+    /// Optional fixed VLC HTTP interface port (None = auto-pick 8080..=8180).
+    #[serde(default)]
+    pub vlc_http_port: Option<u16>,
+    /// Additional command-line arguments to pass to the player.
+    #[serde(default)]
+    pub extra_args: Vec<String>,
     /// Preferred video player executable name.
+    #[serde(default = "default_preferred_player")]
     pub preferred: String,
     /// Optional custom command override to launch the player.
+    #[serde(default)]
     pub custom_command: Option<String>,
-    /// Additional command-line arguments to pass to the player.
-    pub extra_args: Vec<String>,
+}
+
+fn default_preferred_player() -> String {
+    "mpv".to_string()
 }
 
 impl Default for PlayerConfig {
     fn default() -> Self {
         Self {
-            preferred: "mpv".to_string(),
-            custom_command: None,
+            backend: PlayerBackend::Auto,
+            vlc_http_port: None,
             extra_args: Vec::new(),
+            preferred: default_preferred_player(),
+            custom_command: None,
         }
     }
 }
@@ -275,6 +317,22 @@ pub fn db_path() -> PathBuf {
         return dir.join("sloth.db");
     }
     PathBuf::from("sloth.db")
+}
+
+/// Auto-detects available video player backend from PATH in order: mpv -> vlc -> iina -> celluloid.
+pub fn detect_player() -> Option<PlayerBackend> {
+    let candidates = [
+        ("mpv", PlayerBackend::Mpv),
+        ("vlc", PlayerBackend::Vlc),
+        ("iina", PlayerBackend::Iina),
+        ("celluloid", PlayerBackend::Mpv), // celluloid is an mpv frontend
+    ];
+    for (bin, backend) in &candidates {
+        if which::which(bin).is_ok() {
+            return Some(*backend);
+        }
+    }
+    None
 }
 
 /// Checks PATH for available video players in preference order: mpv, vlc, iina, celluloid.
@@ -481,6 +539,8 @@ mod tests {
     #[test]
     fn test_player_detection_and_resolution() {
         let config = PlayerConfig {
+            backend: PlayerBackend::Auto,
+            vlc_http_port: None,
             preferred: "nonexistent_custom_player_xyz".to_string(),
             custom_command: None,
             extra_args: Vec::new(),
