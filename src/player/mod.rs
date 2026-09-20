@@ -46,17 +46,15 @@ pub async fn launch_player(
     episode: u32,
 ) -> Result<(), crate::SlothError> {
     let backend_choice = match config.backend {
-        crate::config::PlayerBackend::Auto => {
-            crate::config::detect_player().unwrap_or_else(|| {
-                if config.preferred.eq_ignore_ascii_case("vlc") {
-                    crate::config::PlayerBackend::Vlc
-                } else if config.preferred.eq_ignore_ascii_case("iina") {
-                    crate::config::PlayerBackend::Iina
-                } else {
-                    crate::config::PlayerBackend::Mpv
-                }
-            })
-        }
+        crate::config::PlayerBackend::Auto => crate::config::detect_player().unwrap_or_else(|| {
+            if config.preferred.eq_ignore_ascii_case("vlc") {
+                crate::config::PlayerBackend::Vlc
+            } else if config.preferred.eq_ignore_ascii_case("iina") {
+                crate::config::PlayerBackend::Iina
+            } else {
+                crate::config::PlayerBackend::Mpv
+            }
+        }),
         b => b,
     };
 
@@ -67,9 +65,7 @@ pub async fn launch_player(
         crate::config::PlayerBackend::Iina => {
             PlayerBackend::Iina(mpv::MpvPlayer::spawn(stream, resume_pos, config).await?)
         }
-        _ => {
-            PlayerBackend::Mpv(mpv::MpvPlayer::spawn(stream, resume_pos, config).await?)
-        }
+        _ => PlayerBackend::Mpv(mpv::MpvPlayer::spawn(stream, resume_pos, config).await?),
     };
 
     let (pos, dur) = player_backend.wait_for_exit().await;
