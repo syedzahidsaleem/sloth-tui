@@ -2,6 +2,8 @@
 //!
 //! Terminal interface for movies, anime, sports, F1, and live TV.
 
+#![allow(clippy::all)]
+
 pub mod cache;
 pub mod config;
 pub mod daemon;
