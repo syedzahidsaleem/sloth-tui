@@ -281,6 +281,13 @@ impl App {
         };
         let config = crate::tui::config::Config {
             player: crate::config::PlayerConfig {
+                backend: match self.state.default_player.as_deref() {
+                    Some("vlc") => crate::config::PlayerBackend::Vlc,
+                    Some("iina") => crate::config::PlayerBackend::Iina,
+                    Some("mpv") => crate::config::PlayerBackend::Mpv,
+                    _ => crate::config::PlayerBackend::Auto,
+                },
+                vlc_http_port: None,
                 preferred: self
                     .state
                     .default_player
