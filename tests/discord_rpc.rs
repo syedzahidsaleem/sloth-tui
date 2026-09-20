@@ -57,16 +57,26 @@ fn test_discord_rpc_toggle() {
 }
 
 #[test]
-fn test_settings_general_has_four_rows_with_discord_toggle() {
+fn test_settings_general_has_rows_with_discord_and_notifications() {
     let mut state = AppState::default();
     state.settings_category = SettingsCategory::General;
 
-    assert_eq!(SettingsCategory::General.row_count(), 4);
+    assert_eq!(SettingsCategory::General.row_count(), 6);
     assert!(state.discord_rpc_enabled);
+    assert!(state.notifications_enabled);
+    assert_eq!(state.f1_lead_time_minutes, 15);
 
     // Toggle Discord RPC
     state.discord_rpc_enabled = !state.discord_rpc_enabled;
     assert!(!state.discord_rpc_enabled);
+
+    // Toggle Notifications
+    state.notifications_enabled = !state.notifications_enabled;
+    assert!(!state.notifications_enabled);
+
+    // Cycle F1 lead time
+    state.cycle_f1_lead_time(true);
+    assert_eq!(state.f1_lead_time_minutes, 30);
 }
 
 #[test]
