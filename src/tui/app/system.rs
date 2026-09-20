@@ -743,6 +743,110 @@ impl App {
                                 "Browser opened. Paste token into prompt.",
                             );
                         }
+                    } else if self.state.settings_selected_row == 1 {
+                        if self.state.trakt_authenticated {
+                            tokio::spawn(async move {
+                                let db_path = crate::config::db_path();
+                                if let Ok(pool) = crate::db::open(&db_path).await {
+                                    let _ = crate::tracking::trakt::TraktClient::logout(&pool).await;
+                                }
+                            });
+                            self.state.trakt_authenticated = false;
+                            self.state.trakt_username = None;
+                            self.state.notify(
+                                NotificationKind::Info,
+                                "Trakt.tv",
+                                "Logged out of Trakt.tv",
+                            );
+                        } else if !self.state.trakt_auth_pending {
+                            self.state.trakt_auth_pending = true;
+                            self.state.notify(
+                                NotificationKind::Info,
+                                "Trakt.tv",
+                                "Requesting device authorization code...",
+                            );
+                            let tx = self.action_sender.clone();
+                            tokio::spawn(async move {
+                                let client = crate::tracking::trakt::TraktClient::new(
+                                    crate::tracking::trakt::DEFAULT_TRAKT_CLIENT_ID.to_string(),
+                                    None,
+                                    None,
+                                );
+                                if let Ok(device_code) = client.request_device_code().await {
+                                    let _ = open::that(&device_code.verification_url);
+                                    let _ = tx.send(Action::TraktDeviceCodeReceived {
+                                        user_code: device_code.user_code.clone(),
+                                        verification_url: device_code.verification_url.clone(),
+                                    });
+
+                                    let poll_interval =
+                                        std::time::Duration::from_secs(device_code.interval.max(5));
+                                    let timeout_at = std::time::Instant::now()
+                                        + std::time::Duration::from_secs(
+                                            device_code.expires_in.max(300),
+                                        );
+
+                                    let db_path = crate::config::db_path();
+                                    let pool_opt = crate::db::open(&db_path).await.ok();
+
+                                    while std::time::Instant::now() < timeout_at {
+                                        tokio::time::sleep(poll_interval).await;
+                                        if let Ok((status, token_opt)) =
+                                            client.poll_device_token(&device_code.device_code).await
+                                        {
+                                            match status {
+                                                crate::tracking::trakt::DeviceTokenPollStatus::Success => {
+                                                    if let (Some(token), Some(ref pool)) =
+                                                        (token_opt, &pool_opt)
+                                                    {
+                                                        let _ = crate::tracking::trakt::TraktClient::store_tokens(
+                                                            pool,
+                                                            &token.access_token,
+                                                            Some(&token.refresh_token),
+                                                            token.expires_in,
+                                                        )
+                                                        .await;
+
+                                                        let auth_client = crate::tracking::trakt::TraktClient::new(
+                                                            crate::tracking::trakt::DEFAULT_TRAKT_CLIENT_ID
+                                                                .to_string(),
+                                                            None,
+                                                            Some(token.access_token),
+                                                        );
+                                                        let _ = auth_client
+                                                            .sync_history_to_db(pool, 1, 50)
+                                                            .await;
+
+                                                        let _ = tx.send(Action::TraktAuthStatus {
+                                                            authenticated: true,
+                                                            username: Some("Connected".to_string()),
+                                                        });
+                                                    }
+                                                    return;
+                                                }
+                                                crate::tracking::trakt::DeviceTokenPollStatus::Pending => {}
+                                                crate::tracking::trakt::DeviceTokenPollStatus::SlowDown => {
+                                                    tokio::time::sleep(std::time::Duration::from_secs(5))
+                                                        .await;
+                                                }
+                                                _ => {
+                                                    let _ = tx.send(Action::TraktAuthStatus {
+                                                        authenticated: false,
+                                                        username: None,
+                                                    });
+                                                    return;
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    let _ = tx.send(Action::TraktAuthStatus {
+                                        authenticated: false,
+                                        username: None,
+                                    });
+                                }
+                            });
+                        }
                     }
                 }
             },
@@ -1094,6 +1198,33 @@ impl App {
             } => {
                 self.state.anilist_authenticated = authenticated;
                 self.state.anilist_username = username;
+            }
+            Action::TraktDeviceCodeReceived {
+                user_code,
+                verification_url,
+            } => {
+                self.state.trakt_auth_pending = true;
+                self.state.trakt_user_code = Some(user_code.clone());
+                self.state.notify(
+                    NotificationKind::Info,
+                    "Trakt.tv Code",
+                    format!("Code: {user_code} (Enter at {verification_url})"),
+                );
+            }
+            Action::TraktAuthStatus {
+                authenticated,
+                username,
+            } => {
+                self.state.trakt_auth_pending = false;
+                self.state.trakt_authenticated = authenticated;
+                self.state.trakt_username = username;
+                if authenticated {
+                    self.state.notify(
+                        NotificationKind::Success,
+                        "Trakt.tv",
+                        "Trakt.tv connected and history synchronized!",
+                    );
+                }
             }
             _ => return None,
         }
