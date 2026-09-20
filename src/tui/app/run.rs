@@ -602,9 +602,10 @@ impl App {
             }
             Action::PlaybackEnded {
                 resume_position_secs,
+                duration_secs,
             } => {
                 self.state.is_playing = false;
-                self.handle_playback_ended(resume_position_secs);
+                self.handle_playback_ended(resume_position_secs, duration_secs);
                 self.discord_rpc.set_browsing();
             }
             Action::AnimeEpisodesReceived(episodes) => {
