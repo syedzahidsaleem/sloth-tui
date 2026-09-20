@@ -446,7 +446,7 @@ impl SettingsCategory {
 
     pub fn row_count(self) -> usize {
         match self {
-            Self::General => 4,
+            Self::General => 6,
             Self::ContentModes => 3,
             Self::Appearance => 1,
             Self::Accounts => 1,
@@ -639,6 +639,9 @@ pub struct AppState {
     pub update_available: Option<(String, String)>,
     pub auto_update: bool,
     pub discord_rpc_enabled: bool,
+    pub notifications_enabled: bool,
+    pub f1_lead_time_minutes: u32,
+    pub anime_alerts: bool,
     pub last_update_check: u64,
     pub manual_update_check: bool,
     pub is_checking_updates: bool,
@@ -822,6 +825,9 @@ impl Default for AppState {
             update_available: None,
             auto_update: true,
             discord_rpc_enabled: true,
+            notifications_enabled: true,
+            f1_lead_time_minutes: 15,
+            anime_alerts: true,
             last_update_check: 0,
             manual_update_check: false,
             is_checking_updates: false,
@@ -1444,6 +1450,21 @@ impl AppState {
         };
 
         self.default_player = Some(choices[next_idx].to_string());
+    }
+
+    pub fn cycle_f1_lead_time(&mut self, forward: bool) {
+        const CHOICES: [u32; 5] = [5, 10, 15, 30, 60];
+        let total = CHOICES.len();
+        let current_idx = CHOICES
+            .iter()
+            .position(|&m| m == self.f1_lead_time_minutes)
+            .unwrap_or(2);
+        let next_idx = if forward {
+            (current_idx + 1) % total
+        } else {
+            (current_idx + total - 1) % total
+        };
+        self.f1_lead_time_minutes = CHOICES[next_idx];
     }
 
     pub fn cycle_settings_theme(&mut self, forward: bool) -> String {
