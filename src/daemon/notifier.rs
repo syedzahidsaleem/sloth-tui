@@ -14,31 +14,33 @@ use crate::tracking::AniListClient;
 pub fn send_notification(title: &str, body: &str) {
     #[cfg(feature = "notifications")]
     {
-        // Linux/macOS
-        #[cfg(all(not(target_os = "windows"), not(target_os = "android")))]
-        {
-            let _ = notify_rust::Notification::new()
-                .appname("Sloth")
-                .summary(title)
-                .body(body)
-                .icon("media-playback-start")
-                .show();
-        }
+        let title_s = title.to_string();
+        let body_s = body.to_string();
+        std::thread::spawn(move || {
+            #[cfg(all(not(target_os = "windows"), not(target_os = "android")))]
+            {
+                let _ = notify_rust::Notification::new()
+                    .appname("Sloth")
+                    .summary(&title_s)
+                    .body(&body_s)
+                    .icon("media-playback-start")
+                    .show();
+            }
 
-        // Windows: use notify_rust with WinRT toast backend
-        #[cfg(target_os = "windows")]
-        {
-            let _ = notify_rust::Notification::new()
-                .appname("Sloth")
-                .summary(title)
-                .body(body)
-                .show();
-        }
+            #[cfg(target_os = "windows")]
+            {
+                let _ = notify_rust::Notification::new()
+                    .appname("Sloth")
+                    .summary(&title_s)
+                    .body(&body_s)
+                    .show();
+            }
 
-        #[cfg(target_os = "android")]
-        {
-            let _ = (title, body);
-        }
+            #[cfg(target_os = "android")]
+            {
+                let _ = (title_s, body_s);
+            }
+        });
     }
 
     #[cfg(not(feature = "notifications"))]
