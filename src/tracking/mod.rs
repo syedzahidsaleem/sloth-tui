@@ -69,9 +69,9 @@ pub async fn sync_trakt(
 
             let media = crate::providers::models::Media {
                 id: media_id.to_string(),
-                provider_id: "unknown".to_string(),
+                provider_id: "unknown",
                 title,
-                kind: if is_movie_resolved {
+                media_type: if is_movie_resolved {
                     crate::providers::models::MediaType::Movie
                 } else {
                     crate::providers::models::MediaType::Series
@@ -80,7 +80,7 @@ pub async fn sync_trakt(
                 poster_url: None,
                 backdrop_url: None,
                 rating: None,
-                duration_secs: duration.map(|d| d as u64),
+                duration_secs: duration,
                 overview: None,
                 genres: vec![],
                 episodes_count: None,
