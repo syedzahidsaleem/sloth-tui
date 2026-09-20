@@ -1,0 +1,21 @@
+# Maintainer: Syed Zahid Saleem <syedzahidsaleem2@gmail.com>
+pkgname=sloth-tui-bin
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Terminal interface for movies, anime, sports, F1, and live TV — zero cost, always fast."
+arch=('x86_64' 'aarch64')
+url="https://github.com/syedzahidsaleem/sloth-tui"
+license=('MIT' 'Apache-2.0')
+depends=('mpv')
+provides=('sloth-tui')
+conflicts=('sloth-tui')
+
+source_x86_64=("https://github.com/syedzahidsaleem/sloth-tui/releases/download/v${pkgver}/sloth-tui-linux-x86_64.tar.gz")
+sha256sums_x86_64=('ccf04417b7e81ac29edf89c10df155b15ab87c048b62660cad6dbe69a95d9182')
+
+source_aarch64=("https://github.com/syedzahidsaleem/sloth-tui/releases/download/v${pkgver}/sloth-tui-linux-aarch64.tar.gz")
+sha256sums_aarch64=('e931aeb527956e78061bd23f608d43e5f6cccaeb9fa273c7abab04a73d48043d')
+
+package() {
+    install -Dm755 "${srcdir}/sloth-tui" "${pkgdir}/usr/bin/sloth-tui"
+}
