@@ -1204,88 +1204,44 @@ fn home_bottom_bar_spans(
     width: u16,
     modal_active: bool,
 ) -> Vec<Span<'static>> {
-    let compact_tabs = width < 76;
-    let ultra_compact_tabs = width < 58;
-
-    let ctrl_s = if ultra_compact_tabs || compact_tabs {
-        "S"
-    } else {
-        crate::tui::text::CTRL_S_STR
-    };
-    let ctrl_t = if ultra_compact_tabs || compact_tabs {
-        "T"
-    } else {
-        crate::tui::text::CTRL_T_STR
-    };
-
-    let current_mode = state.mode();
-    let mut bar_spans: Vec<Span<'static>> = Vec::new();
     let shortcut_style = if modal_active {
         theme.muted
     } else {
         theme.shortcut
-    };
-    let bracket_style = if modal_active {
-        theme.muted
-    } else {
-        theme.text_dim
     };
     let text_style = if modal_active {
         theme.muted
     } else {
         theme.text_dim
     };
-
-    let sep = if state.basic_terminal {
-        " - "
-    } else if compact_tabs {
-        " · "
+    let sep_style = if modal_active {
+        theme.muted
     } else {
-        "  ·  "
+        theme.overlay1
     };
 
-    if state.streaming_enabled && current_mode != crate::tui::state::AppMode::Streaming {
-        bar_spans.push(Span::styled("[", bracket_style));
-        bar_spans.push(Span::styled(ctrl_s, shortcut_style));
-        bar_spans.push(Span::styled("]", bracket_style));
-        if !compact_tabs {
-            bar_spans.push(Span::styled(" Stream", text_style));
-        }
-    }
+    let sep = if width < 70 { "  " } else { "   " };
+    let jk_label = if state.basic_terminal { "j/k" } else { "j↓ k↑" };
 
-    if state.tv_enabled && current_mode != crate::tui::state::AppMode::Tv {
-        if !bar_spans.is_empty() {
-            bar_spans.push(Span::raw(sep));
-        }
-        bar_spans.push(Span::styled("[", bracket_style));
-        bar_spans.push(Span::styled(ctrl_t, shortcut_style));
-        bar_spans.push(Span::styled("]", bracket_style));
-        if !compact_tabs {
-            bar_spans.push(Span::styled(" TV", text_style));
-        }
-    }
-
-    if !bar_spans.is_empty() {
-        let util_gap = if compact_tabs { "    " } else { "       " };
-        bar_spans.push(Span::raw(util_gap));
-    }
-
-    bar_spans.push(Span::styled("[", bracket_style));
-    bar_spans.push(Span::styled("?", shortcut_style));
-    bar_spans.push(Span::styled("]", bracket_style));
-    if !compact_tabs {
-        bar_spans.push(Span::styled(" Help", text_style));
-        bar_spans.push(Span::raw("  "));
-    } else if !ultra_compact_tabs {
-        bar_spans.push(Span::raw(" "));
-    }
-    bar_spans.push(Span::styled("[", bracket_style));
-    bar_spans.push(Span::styled("q", shortcut_style));
-    bar_spans.push(Span::styled("]", bracket_style));
-    if !compact_tabs {
-        bar_spans.push(Span::styled(" Quit", text_style));
-    }
-    bar_spans
+    vec![
+        Span::styled("/", shortcut_style),
+        Span::styled(" Search", text_style),
+        Span::styled(sep, sep_style),
+        Span::styled(jk_label, shortcut_style),
+        Span::styled(" Navigate", text_style),
+        Span::styled(sep, sep_style),
+        Span::styled("Enter", shortcut_style),
+        Span::styled(" Select", text_style),
+        Span::styled(sep, sep_style),
+        Span::styled("f", shortcut_style),
+        Span::styled(" Fav", text_style),
+        Span::styled(sep, sep_style),
+        Span::styled("d", shortcut_style),
+        Span::styled(" DL", text_style),
+        Span::styled(sep, sep_style),
+        Span::styled("q", shortcut_style),
+        Span::styled(" Quit", text_style),
+    ]
 }
 
 /// Renders the 8-tab navigation bar at the top of the terminal screen.
