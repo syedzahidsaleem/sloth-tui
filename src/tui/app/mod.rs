@@ -219,6 +219,7 @@ impl App {
         }
 
         let anilist_tx = app.action_sender.clone();
+        let trakt_tx = app.action_sender.clone();
         if let Ok(handle) = tokio::runtime::Handle::try_current() {
             handle.spawn(async move {
                 let db_path = crate::config::db_path();
@@ -230,6 +231,20 @@ impl App {
                         let _ = anilist_tx.send(crate::tui::action::Action::AniListAuthStatus {
                             authenticated: true,
                             username,
+                        });
+                    }
+
+                    if let Ok(Some(_client)) =
+                        crate::tracking::trakt::TraktClient::authenticate(
+                            &pool,
+                            crate::tracking::trakt::DEFAULT_TRAKT_CLIENT_ID,
+                            None,
+                        )
+                        .await
+                    {
+                        let _ = trakt_tx.send(crate::tui::action::Action::TraktAuthStatus {
+                            authenticated: true,
+                            username: Some("Connected".to_string()),
                         });
                     }
                 }
