@@ -1,10 +1,10 @@
 //! VLC media player integration with HTTP interface for playback control and state tracking.
 
+use parking_lot::Mutex;
+use serde::Deserialize;
 use std::net::TcpListener;
 use std::sync::Arc;
 use std::time::Duration;
-use parking_lot::Mutex;
-use serde::Deserialize;
 
 use crate::SlothError;
 use crate::config::PlayerConfig;
