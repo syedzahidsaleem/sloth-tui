@@ -1565,10 +1565,57 @@ fn draw_content(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &The
         }
         let bar_spans = home_bottom_bar_spans(state, theme, area.width, modal_active);
         let bottom_bar_area = vertical_chunks[rows.mode_row];
-        frame.render_widget(
-            Paragraph::new(Line::from(bar_spans)).alignment(Alignment::Center),
-            bottom_bar_area,
-        );
+
+        let detected = crate::config::detect_player();
+        let (player_badge, player_style) = match detected {
+            Some(crate::config::PlayerBackend::Mpv) => ("[mpv]", theme.teal),
+            Some(crate::config::PlayerBackend::Vlc) => ("[vlc]", theme.rating),
+            Some(crate::config::PlayerBackend::Iina) => ("[iina]", theme.lavender),
+            _ => {
+                if state.basic_terminal {
+                    ("[! no player]", theme.rating)
+                } else {
+                    ("[⚠ no player]", theme.rating)
+                }
+            }
+        };
+
+        let theme_name = if state.active_theme_kind.is_empty() {
+            "Mocha"
+        } else {
+            &state.active_theme_kind
+        };
+
+        if bottom_bar_area.width >= 90 {
+            let right_badge = Line::from(vec![
+                Span::styled(theme_name.to_string(), theme.text_dim),
+                Span::raw(" "),
+                Span::styled(player_badge, player_style.add_modifier(Modifier::BOLD)),
+                Span::raw(" "),
+            ]);
+            let badge_width = (crate::tui::text::width(theme_name)
+                + crate::tui::text::width(player_badge)
+                + 2) as u16;
+
+            let chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Min(0), Constraint::Length(badge_width)])
+                .split(bottom_bar_area);
+
+            frame.render_widget(
+                Paragraph::new(Line::from(bar_spans)).alignment(Alignment::Center),
+                chunks[0],
+            );
+            frame.render_widget(
+                Paragraph::new(right_badge).alignment(Alignment::Right),
+                chunks[1],
+            );
+        } else {
+            frame.render_widget(
+                Paragraph::new(Line::from(bar_spans)).alignment(Alignment::Center),
+                bottom_bar_area,
+            );
+        }
     } else {
         if state.is_loading && state.search_results.is_empty() {
             render_search_state(frame, area, state, theme, SearchViewState::Loading);
