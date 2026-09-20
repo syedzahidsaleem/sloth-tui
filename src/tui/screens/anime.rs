@@ -384,12 +384,23 @@ fn render_bottom_bar(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
         Span::styled("   ⛩ AniList: Synced", theme.teal),
     ]);
 
+    let sep = "   ";
     let row2 = Line::from(vec![
         Span::raw(" "),
-        Span::styled(
-            "[j/k: Navigate  l: Episodes  h: Results  Enter: Select / Play  /: Search]",
-            theme.shortcut,
-        ),
+        Span::styled("/", theme.shortcut),
+        Span::styled(" Search", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("t", theme.shortcut),
+        Span::styled(" Sub/Dub", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("a", theme.shortcut),
+        Span::styled(" AniList", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("Enter", theme.shortcut),
+        Span::styled(" Play", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("q", theme.shortcut),
+        Span::styled(" Quit", theme.text_dim),
     ]);
 
     let p = Paragraph::new(vec![row1, row2]);
