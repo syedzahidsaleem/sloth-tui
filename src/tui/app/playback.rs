@@ -1064,24 +1064,60 @@ impl App {
 
             let _ = tx.send(crate::tui::action::Action::PlaybackStarted);
 
-            match crate::player::mpv::MpvPlayer::spawn(&stream, resume_pos, &config).await {
-                Ok(mut player) => {
-                    let final_pos = player.wait_for_exit().await;
+            let backend_choice = match config.backend {
+                crate::config::PlayerBackend::Auto => crate::config::detect_player()
+                    .unwrap_or_else(|| {
+                        if config.preferred.eq_ignore_ascii_case("vlc") {
+                            crate::config::PlayerBackend::Vlc
+                        } else if config.preferred.eq_ignore_ascii_case("iina") {
+                            crate::config::PlayerBackend::Iina
+                        } else {
+                            crate::config::PlayerBackend::Mpv
+                        }
+                    }),
+                b => b,
+            };
+
+            let spawn_res = match backend_choice {
+                crate::config::PlayerBackend::Vlc => {
+                    crate::player::vlc::VlcPlayer::spawn(&stream, resume_pos, &config)
+                        .await
+                        .map(crate::player::PlayerBackend::Vlc)
+                }
+                crate::config::PlayerBackend::Iina => {
+                    crate::player::mpv::MpvPlayer::spawn(&stream, resume_pos, &config)
+                        .await
+                        .map(crate::player::PlayerBackend::Iina)
+                }
+                _ => crate::player::mpv::MpvPlayer::spawn(&stream, resume_pos, &config)
+                    .await
+                    .map(crate::player::PlayerBackend::Mpv),
+            };
+
+            match spawn_res {
+                Ok(mut backend) => {
+                    let (final_pos, final_dur) = backend.wait_for_exit().await;
                     let _ = tx.send(crate::tui::action::Action::PlaybackEnded {
                         resume_position_secs: final_pos,
+                        duration_secs: final_dur,
                     });
                 }
                 Err(e) => {
-                    tracing::error!("Failed to spawn mpv player: {e}");
+                    tracing::error!("Failed to spawn player backend: {e}");
                     let _ = tx.send(crate::tui::action::Action::PlaybackEnded {
                         resume_position_secs: None,
+                        duration_secs: None,
                     });
                 }
             }
         });
     }
 
-    pub(super) fn handle_playback_ended(&mut self, resume_position_secs: Option<f64>) {
+    pub(super) fn handle_playback_ended(
+        &mut self,
+        resume_position_secs: Option<f64>,
+        duration_secs: Option<f64>,
+    ) {
         self.state.is_playing = false;
         self.state.is_resolving_playback = false;
 
@@ -1104,15 +1140,18 @@ impl App {
 
         let title = history_item.as_ref().map(|h| h.title.clone());
 
-        if let Some(pos) = resume_position_secs {
-            let duration = history_item
+        let duration = duration_secs.or_else(|| {
+            history_item
                 .as_ref()
                 .and_then(|h| h.duration_seconds)
-                .map(|d| d as f64);
+                .map(|d| d as f64)
+        });
 
-            let is_completed = match duration {
-                Some(d) if d > 0.0 => (pos / d) >= 0.85,
-                _ => false,
+        if let Some(pos) = resume_position_secs {
+            let is_completed = if let Some(d) = duration {
+                d > 0.0 && (pos / d >= 0.85)
+            } else {
+                false
             };
 
             let entry = crate::db::WatchEntry {
@@ -1715,7 +1754,7 @@ mod tests {
         let mut app = crate::tui::app::App::new();
         app.state.is_playing = true;
         app.state.is_resolving_playback = true;
-        app.handle_playback_ended(Some(123.45));
+        app.handle_playback_ended(Some(123.45), Some(200.0));
         assert!(!app.state.is_playing);
         assert!(!app.state.is_resolving_playback);
     }
