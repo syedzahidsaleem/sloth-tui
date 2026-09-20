@@ -377,6 +377,14 @@ impl App {
                             self.discord_rpc.set_enabled(self.state.discord_rpc_enabled);
                             self.persist_config();
                         }
+                        4 => {
+                            self.state.notifications_enabled = !self.state.notifications_enabled;
+                            self.persist_config();
+                        }
+                        5 => {
+                            self.state.cycle_f1_lead_time(forward);
+                            self.persist_config();
+                        }
                         _ => {}
                     }
                 }
@@ -510,6 +518,14 @@ impl App {
                         3 => {
                             self.state.discord_rpc_enabled = !self.state.discord_rpc_enabled;
                             self.discord_rpc.set_enabled(self.state.discord_rpc_enabled);
+                            self.persist_config();
+                        }
+                        4 => {
+                            self.state.notifications_enabled = !self.state.notifications_enabled;
+                            self.persist_config();
+                        }
+                        5 => {
+                            self.state.cycle_f1_lead_time(true);
                             self.persist_config();
                         }
                         _ => {}
