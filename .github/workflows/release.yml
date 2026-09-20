@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -54,7 +55,7 @@ jobs:
 
       - name: Install cross
         if: matrix.use_cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        uses: taiki-e/install-action@cross
 
       - name: Build binary
         run: |
@@ -68,19 +69,30 @@ jobs:
       - name: Package archive (Unix)
         if: runner.os != 'Windows'
         run: |
+          mkdir -p dist
+          cp README.md LICENSE target/${{ matrix.target }}/release/
           cd target/${{ matrix.target }}/release
-          tar -czf ../../../${{ matrix.archive }} ${{ matrix.binary }}
+          tar -czf ../../../dist/${{ matrix.archive }} ${{ matrix.binary }} README.md LICENSE
           cd ../../..
+          cd dist
+          sha256sum ${{ matrix.archive }} > ${{ matrix.archive }}.sha256
+          cd ..
 
       - name: Package archive (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          Compress-Archive -Path target\${{ matrix.target }}\release\${{ matrix.binary }} -DestinationPath ${{ matrix.archive }}
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Compress-Archive -Path target\${{ matrix.target }}\release\${{ matrix.binary }}, README.md, LICENSE -DestinationPath dist\${{ matrix.archive }} -Force
+          $hash = (Get-FileHash -Path dist\${{ matrix.archive }} -Algorithm SHA256).Hash.ToLower()
+          "$hash  ${{ matrix.archive }}" | Out-File -FilePath "dist\${{ matrix.archive }}.sha256" -Encoding ascii
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.archive }}
+          files: |
+            dist/${{ matrix.archive }}
+            dist/${{ matrix.archive }}.sha256
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
