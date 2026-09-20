@@ -686,6 +686,15 @@ impl TraktClient {
         }
 
         if let Some(pool) = pool {
+            let _ = sqlx::query(
+                "INSERT OR IGNORE INTO media (id, provider_id, title, kind) VALUES (?1, 'unknown', ?2, ?3)",
+            )
+            .bind(&media.id)
+            .bind(&media.title)
+            .bind(kind_str)
+            .execute(pool)
+            .await;
+
             let dirty = if success { 0 } else { 1 };
             let _ = sqlx::query(
                 r#"
