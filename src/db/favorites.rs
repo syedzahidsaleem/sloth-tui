@@ -183,6 +183,7 @@ pub async fn list(pool: &SqlitePool) -> Result<Vec<Media>, SlothError> {
                     mal: r.mal_id.map(|m| m as u32),
                     tvdb: None,
                     imdb: r.external_id,
+                    trakt: None,
                 },
                 cast: Vec::new(),
             }
