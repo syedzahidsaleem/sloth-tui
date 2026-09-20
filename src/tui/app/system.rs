@@ -748,7 +748,8 @@ impl App {
                             tokio::spawn(async move {
                                 let db_path = crate::config::db_path();
                                 if let Ok(pool) = crate::db::open(&db_path).await {
-                                    let _ = crate::tracking::trakt::TraktClient::logout(&pool).await;
+                                    let _ =
+                                        crate::tracking::trakt::TraktClient::logout(&pool).await;
                                 }
                             });
                             self.state.trakt_authenticated = false;
