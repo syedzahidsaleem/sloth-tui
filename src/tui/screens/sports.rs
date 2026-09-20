@@ -452,17 +452,19 @@ fn render_stream_details_card(
 
 /// Renders the bottom shortcut hints and navigation bar.
 fn render_bottom_bar(frame: &mut Frame, area: Rect, theme: &Theme) {
+    let sep = "   ";
     let shortcuts = Line::from(vec![
-        Span::styled(" h/l ", theme.shortcut),
-        Span::styled("Navigate Columns  ", theme.text_dim),
-        Span::styled(" j/k ", theme.shortcut),
-        Span::styled("Scroll List  ", theme.text_dim),
-        Span::styled(" Enter ", theme.shortcut),
-        Span::styled("Confirm / Play  ", theme.text_dim),
-        Span::styled(" r ", theme.shortcut),
-        Span::styled("Refresh Live  ", theme.text_dim),
-        Span::styled(" ? ", theme.shortcut),
-        Span::styled("Help", theme.text_dim),
+        Span::styled("h← l→", theme.shortcut),
+        Span::styled(" Navigate", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("Enter", theme.shortcut),
+        Span::styled(" Play", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("r", theme.shortcut),
+        Span::styled(" Refresh", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("q", theme.shortcut),
+        Span::styled(" Quit", theme.text_dim),
     ]);
 
     let bar = Paragraph::new(shortcuts).alignment(Alignment::Center);
