@@ -4,7 +4,27 @@ use sloth_tui::daemon::notifier::{
     check_and_notify_f1, purge_old_notifications, send_notification,
 };
 use sloth_tui::providers::f1::calendar::{save_calendar_to_cache, F1Session, F1SessionKind, F1SessionSlot};
-use sloth_tui::tui::state::{AppState, SettingsCategory};
+use sloth_tui::tui::state::AppState;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+
+async fn setup_test_db() -> sqlx::SqlitePool {
+    let options = SqliteConnectOptions::new()
+        .filename(":memory:")
+        .create_if_missing(true);
+
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(options)
+        .await
+        .expect("Failed to connect to in-memory sqlite db");
+
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
+    pool
+}
 
 #[test]
 fn test_send_notification_smoke() {
@@ -14,9 +34,7 @@ fn test_send_notification_smoke() {
 
 #[tokio::test]
 async fn test_f1_session_notification_and_deduplication() {
-    let pool = sloth_tui::db::open(std::path::Path::new(":memory:"))
-        .await
-        .expect("in-memory db must open and migrate");
+    let pool = setup_test_db().await;
 
     let now = Utc::now();
     let current_year = now.year() as u32;
@@ -70,9 +88,7 @@ async fn test_f1_session_notification_and_deduplication() {
 
 #[tokio::test]
 async fn test_notification_retention_purge() {
-    let pool = sloth_tui::db::open(std::path::Path::new(":memory:"))
-        .await
-        .expect("in-memory db must open and migrate");
+    let pool = setup_test_db().await;
 
     // Old entry: 8 days old (> 7 days)
     sqlx::query(
