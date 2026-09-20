@@ -5,8 +5,8 @@ use sqlx::{Row, SqlitePool};
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::providers::models::{Media, MediaType};
 use crate::SlothError;
+use crate::providers::models::{Media, MediaType};
 
 /// Trakt.tv API base URL.
 pub const TRAKT_API_URL: &str = "https://api.trakt.tv";
@@ -332,7 +332,11 @@ impl TraktClient {
             .json(&body)
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
+            .map_err(|e| {
+                SlothError::Provider(crate::providers::models::ProviderError::Network(
+                    e.to_string(),
+                ))
+            })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -345,7 +349,9 @@ impl TraktClient {
         }
 
         let device_code: DeviceCodeResponse = resp.json().await.map_err(|e| {
-            SlothError::Provider(crate::providers::models::ProviderError::Parsing(e.to_string()))
+            SlothError::Provider(crate::providers::models::ProviderError::Parsing(
+                e.to_string(),
+            ))
         })?;
 
         Ok(device_code)
@@ -372,7 +378,11 @@ impl TraktClient {
             .json(&body)
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
+            .map_err(|e| {
+                SlothError::Provider(crate::providers::models::ProviderError::Network(
+                    e.to_string(),
+                ))
+            })?;
 
         match resp.status().as_u16() {
             200 => {
@@ -414,7 +424,10 @@ impl TraktClient {
 
         println!("\n=======================================================");
         println!("Trakt.tv Authorization Required");
-        println!("1. Open URL in your browser: {}", device_code.verification_url);
+        println!(
+            "1. Open URL in your browser: {}",
+            device_code.verification_url
+        );
         println!("2. Enter verification code:  {}", device_code.user_code);
         println!("=======================================================\n");
 
@@ -474,12 +487,18 @@ impl TraktClient {
         }
 
         Err(SlothError::Provider(
-            crate::providers::models::ProviderError::Parsing("Device code polling timed out".into()),
+            crate::providers::models::ProviderError::Parsing(
+                "Device code polling timed out".into(),
+            ),
         ))
     }
 
     /// Internal helper to build an authenticated request with Trakt headers.
-    fn authed_request(&self, method: reqwest::Method, url: &str) -> Result<reqwest::RequestBuilder, SlothError> {
+    fn authed_request(
+        &self,
+        method: reqwest::Method,
+        url: &str,
+    ) -> Result<reqwest::RequestBuilder, SlothError> {
         let Some(ref token) = self.access_token else {
             return Err(SlothError::Provider(
                 crate::providers::models::ProviderError::AuthRequired,
@@ -543,11 +562,11 @@ impl TraktClient {
         let payload = Self::build_media_payload(media, season, episode, progress);
 
         let req = self.authed_request(reqwest::Method::POST, &url)?;
-        let resp = req
-            .json(&payload)
-            .send()
-            .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
+        let resp = req.json(&payload).send().await.map_err(|e| {
+            SlothError::Provider(crate::providers::models::ProviderError::Network(
+                e.to_string(),
+            ))
+        })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -560,7 +579,9 @@ impl TraktClient {
         }
 
         let scrobble: ScrobbleResponse = resp.json().await.map_err(|e| {
-            SlothError::Provider(crate::providers::models::ProviderError::Parsing(e.to_string()))
+            SlothError::Provider(crate::providers::models::ProviderError::Parsing(
+                e.to_string(),
+            ))
         })?;
 
         Ok(scrobble)
@@ -575,10 +596,11 @@ impl TraktClient {
         let url = format!("{TRAKT_API_URL}/sync/history?page={page}&limit={limit}");
         let req = self.authed_request(reqwest::Method::GET, &url)?;
 
-        let resp = req
-            .send()
-            .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
+        let resp = req.send().await.map_err(|e| {
+            SlothError::Provider(crate::providers::models::ProviderError::Network(
+                e.to_string(),
+            ))
+        })?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -591,7 +613,9 @@ impl TraktClient {
         }
 
         let items: Vec<TraktHistoryItem> = resp.json().await.map_err(|e| {
-            SlothError::Provider(crate::providers::models::ProviderError::Parsing(e.to_string()))
+            SlothError::Provider(crate::providers::models::ProviderError::Parsing(
+                e.to_string(),
+            ))
         })?;
 
         Ok(items)
@@ -675,7 +699,10 @@ impl TraktClient {
 
         let payload = Self::build_sync_history_payload(media, season, episode);
 
-        let res = self.authed_request(reqwest::Method::POST, &format!("{TRAKT_API_URL}/sync/history"));
+        let res = self.authed_request(
+            reqwest::Method::POST,
+            &format!("{TRAKT_API_URL}/sync/history"),
+        );
 
         let mut success = false;
         if let Ok(req) = res {
@@ -758,13 +785,17 @@ impl TraktClient {
                 }
             });
 
-            if let Ok(req) = self.authed_request(reqwest::Method::POST, &format!("{TRAKT_API_URL}/sync/history")) {
+            if let Ok(req) = self.authed_request(
+                reqwest::Method::POST,
+                &format!("{TRAKT_API_URL}/sync/history"),
+            ) {
                 if let Ok(resp) = req.json(&payload).send().await {
                     if resp.status().is_success() {
-                        let _ = sqlx::query("UPDATE trakt_entries SET dirty = 0 WHERE trakt_id = ?1")
-                            .bind(&trakt_id)
-                            .execute(pool)
-                            .await;
+                        let _ =
+                            sqlx::query("UPDATE trakt_entries SET dirty = 0 WHERE trakt_id = ?1")
+                                .bind(&trakt_id)
+                                .execute(pool)
+                                .await;
                         count += 1;
                     }
                 }
