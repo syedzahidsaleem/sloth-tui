@@ -1,8 +1,8 @@
 //! IINA player integration (macOS native with mpv IPC support).
 
+use crate::SlothError;
 use crate::config::PlayerConfig;
 use crate::providers::models::StreamUrl;
-use crate::SlothError;
 
 #[cfg(target_os = "macos")]
 use std::path::PathBuf;

@@ -3,7 +3,9 @@ use sloth_tui::config::NotificationsConfig;
 use sloth_tui::daemon::notifier::{
     check_and_notify_f1, purge_old_notifications, send_notification,
 };
-use sloth_tui::providers::f1::calendar::{save_calendar_to_cache, F1Session, F1SessionKind, F1SessionSlot};
+use sloth_tui::providers::f1::calendar::{
+    F1Session, F1SessionKind, F1SessionSlot, save_calendar_to_cache,
+};
 use sloth_tui::tui::state::AppState;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
@@ -68,10 +70,11 @@ async fn test_f1_session_notification_and_deduplication() {
         .await
         .expect("F1 notifier check must succeed");
 
-    let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM notifications_sent WHERE kind = 'session_start'")
-        .fetch_one(&pool)
-        .await
-        .expect("query count");
+    let count: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM notifications_sent WHERE kind = 'session_start'")
+            .fetch_one(&pool)
+            .await
+            .expect("query count");
     assert_eq!(count.0, 1, "exactly one notification must be recorded");
 
     // Second run: deduplication should ensure count remains 1
@@ -79,10 +82,11 @@ async fn test_f1_session_notification_and_deduplication() {
         .await
         .expect("second F1 check must succeed");
 
-    let count2: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM notifications_sent WHERE kind = 'session_start'")
-        .fetch_one(&pool)
-        .await
-        .expect("query count");
+    let count2: (i64,) =
+        sqlx::query_as("SELECT COUNT(*) FROM notifications_sent WHERE kind = 'session_start'")
+            .fetch_one(&pool)
+            .await
+            .expect("query count");
     assert_eq!(count2.0, 1, "notification must not be duplicated");
 }
 
@@ -106,7 +110,9 @@ async fn test_notification_retention_purge() {
     .await
     .expect("insert recent notification");
 
-    let purged = purge_old_notifications(&pool).await.expect("purge must succeed");
+    let purged = purge_old_notifications(&pool)
+        .await
+        .expect("purge must succeed");
     assert_eq!(purged, 1, "must purge exactly 1 expired notification");
 
     let remaining: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM notifications_sent")

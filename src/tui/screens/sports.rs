@@ -10,8 +10,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation,
-        ScrollbarState, Wrap,
+        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Wrap,
     },
 };
 
@@ -25,11 +25,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &SportsTabState, theme: &The
     }
 
     // Split into main 3-column panel area and bottom navigation bar
-    let vertical_layout = Layout::vertical([
-        Constraint::Min(0),
-        Constraint::Length(2),
-    ])
-    .split(area);
+    let vertical_layout = Layout::vertical([Constraint::Min(0), Constraint::Length(2)]).split(area);
 
     let panels_area = vertical_layout[0];
     let bottom_area = vertical_layout[1];
@@ -53,12 +49,7 @@ pub fn render(frame: &mut Frame, area: Rect, state: &SportsTabState, theme: &The
 }
 
 /// Renders the left sports category column (20% width).
-fn render_sports_column(
-    frame: &mut Frame,
-    area: Rect,
-    state: &SportsTabState,
-    theme: &Theme,
-) {
+fn render_sports_column(frame: &mut Frame, area: Rect, state: &SportsTabState, theme: &Theme) {
     let is_focused = state.focus == SportsColumnFocus::Sports;
     let border_style = if is_focused {
         theme.border_focus
@@ -94,7 +85,13 @@ fn render_sports_column(
         0
     };
 
-    for (idx, sport) in state.sports.iter().enumerate().skip(scroll_offset).take(visible_rows) {
+    for (idx, sport) in state
+        .sports
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(visible_rows)
+    {
         let is_selected = idx == state.selected_sport_idx;
         let prefix = if is_selected { " > " } else { "   " };
         let style = if is_selected {
@@ -117,8 +114,8 @@ fn render_sports_column(
     frame.render_widget(paragraph, inner);
 
     if total_sports > visible_rows {
-        let mut scrollbar_state = ScrollbarState::new(total_sports)
-            .position(state.selected_sport_idx);
+        let mut scrollbar_state =
+            ScrollbarState::new(total_sports).position(state.selected_sport_idx);
         frame.render_stateful_widget(
             Scrollbar::default()
                 .orientation(ScrollbarOrientation::VerticalRight)
@@ -131,12 +128,7 @@ fn render_sports_column(
 }
 
 /// Renders the middle live & upcoming matches column (45% width).
-fn render_matches_column(
-    frame: &mut Frame,
-    area: Rect,
-    state: &SportsTabState,
-    theme: &Theme,
-) {
+fn render_matches_column(frame: &mut Frame, area: Rect, state: &SportsTabState, theme: &Theme) {
     let is_focused = state.focus == SportsColumnFocus::Matches;
     let border_style = if is_focused {
         theme.border_focus
@@ -176,7 +168,10 @@ fn render_matches_column(
                 "Press Enter on a sport to load matches",
                 theme.text_dim,
             )),
-            Line::from(Span::styled("Press 'r' to refresh live data", theme.text_dim)),
+            Line::from(Span::styled(
+                "Press 'r' to refresh live data",
+                theme.text_dim,
+            )),
         ])
         .alignment(Alignment::Center);
         frame.render_widget(placeholder, inner);
@@ -194,12 +189,21 @@ fn render_matches_column(
     };
 
     let mut lines = Vec::new();
-    for (idx, m) in state.matches.iter().enumerate().skip(scroll_offset).take(visible_items) {
+    for (idx, m) in state
+        .matches
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(visible_items)
+    {
         let is_selected = idx == state.selected_match_idx;
         let prefix = if is_selected { " > " } else { "   " };
 
         let status_icon = if m.is_live() {
-            Span::styled("● ", Style::default().fg(Color::Red).add_modifier(Modifier::BOLD))
+            Span::styled(
+                "● ",
+                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+            )
         } else {
             Span::styled("⏰ ", Style::default().fg(Color::Yellow))
         };
@@ -226,7 +230,9 @@ fn render_matches_column(
         let comp = m.competition.as_deref().unwrap_or("Competition");
         let badge_text = m.time_badge();
         let badge_style = if m.is_live() {
-            Style::default().fg(Color::LightRed).add_modifier(Modifier::BOLD)
+            Style::default()
+                .fg(Color::LightRed)
+                .add_modifier(Modifier::BOLD)
         } else {
             theme.text_dim
         };
@@ -243,8 +249,8 @@ fn render_matches_column(
     frame.render_widget(paragraph, inner);
 
     if total_matches > visible_items {
-        let mut scrollbar_state = ScrollbarState::new(total_matches)
-            .position(state.selected_match_idx);
+        let mut scrollbar_state =
+            ScrollbarState::new(total_matches).position(state.selected_match_idx);
         frame.render_stateful_widget(
             Scrollbar::default()
                 .orientation(ScrollbarOrientation::VerticalRight)
@@ -266,12 +272,7 @@ fn format_match_title(m: &LiveMatch) -> String {
 }
 
 /// Renders the right stream sources and details column (35% width).
-fn render_streams_column(
-    frame: &mut Frame,
-    area: Rect,
-    state: &SportsTabState,
-    theme: &Theme,
-) {
+fn render_streams_column(frame: &mut Frame, area: Rect, state: &SportsTabState, theme: &Theme) {
     let is_focused = state.focus == SportsColumnFocus::Streams;
     let border_style = if is_focused {
         theme.border_focus
@@ -300,10 +301,7 @@ fn render_streams_column(
     if state.streams.is_empty() {
         let placeholder = Paragraph::new(vec![
             Line::from(""),
-            Line::from(Span::styled(
-                "No stream sources selected",
-                theme.text_dim,
-            )),
+            Line::from(Span::styled("No stream sources selected", theme.text_dim)),
             Line::from(Span::styled(
                 "Select a match and press Enter",
                 theme.text_dim,
@@ -319,11 +317,7 @@ fn render_streams_column(
     }
 
     // Split inner area into top stream list and bottom stream details card
-    let stream_layout = Layout::vertical([
-        Constraint::Min(4),
-        Constraint::Length(6),
-    ])
-    .split(inner);
+    let stream_layout = Layout::vertical([Constraint::Min(4), Constraint::Length(6)]).split(inner);
 
     let list_area = stream_layout[0];
     let details_area = stream_layout[1];
@@ -338,7 +332,13 @@ fn render_streams_column(
     };
 
     let mut lines = Vec::new();
-    for (idx, stream) in state.streams.iter().enumerate().skip(scroll_offset).take(visible_rows) {
+    for (idx, stream) in state
+        .streams
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(visible_rows)
+    {
         let is_selected = idx == state.selected_stream_idx;
         let prefix = if is_selected { " > " } else { "   " };
 
@@ -366,8 +366,8 @@ fn render_streams_column(
     frame.render_widget(list_paragraph, list_area);
 
     if total_streams > visible_rows {
-        let mut scrollbar_state = ScrollbarState::new(total_streams)
-            .position(state.selected_stream_idx);
+        let mut scrollbar_state =
+            ScrollbarState::new(total_streams).position(state.selected_stream_idx);
         frame.render_stateful_widget(
             Scrollbar::default()
                 .orientation(ScrollbarOrientation::VerticalRight)
@@ -385,23 +385,31 @@ fn render_streams_column(
 }
 
 /// Determines the display badge and color style for a stream source.
-fn format_stream_quality_badge<'a>(stream: &'a MatchStream, theme: &'a Theme) -> (&'static str, Style) {
+fn format_stream_quality_badge<'a>(
+    stream: &'a MatchStream,
+    theme: &'a Theme,
+) -> (&'static str, Style) {
     if stream.hd_url.is_some() {
-        ("HD", Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+        (
+            "HD",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )
     } else if stream.sd_url.is_some() {
-        ("SD", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD))
+        (
+            "SD",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
     } else {
         ("Embed", theme.text_dim)
     }
 }
 
 /// Renders details, quality bar, and playback action button for the selected stream.
-fn render_stream_details_card(
-    frame: &mut Frame,
-    area: Rect,
-    stream: &MatchStream,
-    theme: &Theme,
-) {
+fn render_stream_details_card(frame: &mut Frame, area: Rect, stream: &MatchStream, theme: &Theme) {
     let block = Block::default()
         .borders(Borders::TOP)
         .border_style(theme.border);
@@ -432,7 +440,12 @@ fn render_stream_details_card(
     let details_lines = vec![
         Line::from(vec![
             Span::styled(" Quality: ", theme.text_dim),
-            Span::styled(quality_tier, Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                quality_tier,
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
             Span::raw("  "),
             Span::styled(quality_bar, Style::default().fg(Color::Cyan)),
         ]),
@@ -440,13 +453,16 @@ fn render_stream_details_card(
             Span::styled(" Source:  ", theme.text_dim),
             Span::styled(&stream.id, theme.text),
         ]),
-        Line::from(vec![
-            Span::styled(" [▶ Enter: Play Stream] ", Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)),
-        ]),
+        Line::from(vec![Span::styled(
+            " [▶ Enter: Play Stream] ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
     ];
 
-    let details_paragraph = Paragraph::new(details_lines)
-        .wrap(Wrap { trim: true });
+    let details_paragraph = Paragraph::new(details_lines).wrap(Wrap { trim: true });
     frame.render_widget(details_paragraph, inner);
 }
 
@@ -474,8 +490,8 @@ fn render_bottom_bar(frame: &mut Frame, area: Rect, theme: &Theme) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     #[test]
     fn test_sports_screen_renders_without_panic() {

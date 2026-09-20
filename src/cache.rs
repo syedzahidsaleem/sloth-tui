@@ -4,7 +4,7 @@ use crate::models::{
     BrowseMetrics, CatalogItem, MediaDetails, ProviderKind, Release, SubtitleOption,
 };
 use crate::providers::addons::models::AddonManifest;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -710,7 +710,10 @@ pub fn clear_all_cache() -> Result<(), String> {
         }
     }
     if let Some(home) = dirs::home_dir() {
-        let storage = home.join(format!("storage/downloads/{}_subs", crate::config::APP_NAME));
+        let storage = home.join(format!(
+            "storage/downloads/{}_subs",
+            crate::config::APP_NAME
+        ));
         if storage.exists() {
             purge_subtitle_cache_files(&storage, &mut errors);
         }

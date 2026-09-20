@@ -73,10 +73,7 @@ pub fn handle_anime_select(state: &mut AppState, tx: &mpsc::UnboundedSender<Acti
 }
 
 /// Resolves playback stream for the selected anime and episode.
-pub fn handle_anime_episode_select(
-    state: &mut AppState,
-    tx: &mpsc::UnboundedSender<Action>,
-) {
+pub fn handle_anime_episode_select(state: &mut AppState, tx: &mpsc::UnboundedSender<Action>) {
     let media = match state.anime_tab.selected_anime().cloned() {
         Some(m) => m,
         None => return,

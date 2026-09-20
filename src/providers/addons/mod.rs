@@ -13,12 +13,12 @@ pub use aggregator::aggregate_streams;
 pub use client::AddonClient;
 pub use models::{AddonManifest, InstalledAddon, MetaDetail, MetaItem, StreamItem};
 
-use async_trait::async_trait;
 use crate::providers::models::{
     CatalogItem, EpisodeRef, Media, MediaDetails, MediaType, ProviderError, ProviderKind, Quality,
     StreamUrl,
 };
 use crate::providers::{Provider, ProviderCapabilities};
+use async_trait::async_trait;
 
 #[async_trait]
 impl Provider for AddonClient {

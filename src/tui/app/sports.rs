@@ -55,7 +55,12 @@ pub fn handle_match_selected(
     state.is_loading = true;
     state.sports_tab.focus = SportsColumnFocus::Streams;
 
-    if let Some(pos) = state.sports_tab.matches.iter().position(|m| m.id == match_id) {
+    if let Some(pos) = state
+        .sports_tab
+        .matches
+        .iter()
+        .position(|m| m.id == match_id)
+    {
         state.sports_tab.selected_match_idx = pos;
     }
 
@@ -87,10 +92,7 @@ pub fn handle_match_selected(
 }
 
 /// Resolves the selected stream and initiates playback.
-pub fn handle_stream_play(
-    state: &mut AppState,
-    tx: &mpsc::UnboundedSender<Action>,
-) {
+pub fn handle_stream_play(state: &mut AppState, tx: &mpsc::UnboundedSender<Action>) {
     let stream = match state.sports_tab.selected_stream() {
         Some(s) => s,
         None => return,
@@ -126,10 +128,7 @@ pub fn handle_stream_play(
 }
 
 /// Re-fetches current sport matches from streamed.su (e.g. on 'r' or periodic 5-minute tick).
-pub fn refresh_live_data(
-    state: &mut AppState,
-    tx: &mpsc::UnboundedSender<Action>,
-) {
+pub fn refresh_live_data(state: &mut AppState, tx: &mpsc::UnboundedSender<Action>) {
     state.sports_tab.last_refresh = Some(std::time::Instant::now());
     state.is_loading = true;
 

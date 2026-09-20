@@ -10,7 +10,7 @@ pub use title::clean_moviebox_title;
 
 use async_trait::async_trait;
 use client::{MovieBoxClient, ScraperError};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::providers::models::{
     CatalogItem, EpisodeRef, Media, MediaDetails, MediaType, ProviderError, ProviderKind, Quality,

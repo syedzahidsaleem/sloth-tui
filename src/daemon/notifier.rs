@@ -1,13 +1,13 @@
 //! Background notification daemon sending OS desktop notifications for
 //! upcoming F1 sessions and AniList episode broadcasts.
 
-use std::time::Duration;
 use chrono::{Datelike, Utc};
 use sqlx::SqlitePool;
+use std::time::Duration;
 
 use crate::SlothError;
 use crate::config::NotificationsConfig;
-use crate::providers::f1::calendar::{get_cached_calendar, F1SessionKind};
+use crate::providers::f1::calendar::{F1SessionKind, get_cached_calendar};
 use crate::tracking::AniListClient;
 
 /// Dispatches an OS desktop notification with title and body.
@@ -48,7 +48,10 @@ pub fn send_notification(title: &str, body: &str) {
 }
 
 /// Checks for F1 sessions starting within the specified lead time and notifies if not already sent.
-pub async fn check_and_notify_f1(pool: &SqlitePool, lead_time_minutes: u32) -> Result<(), SlothError> {
+pub async fn check_and_notify_f1(
+    pool: &SqlitePool,
+    lead_time_minutes: u32,
+) -> Result<(), SlothError> {
     let now = Utc::now();
     let season = now.year() as u32;
 
@@ -263,7 +266,7 @@ pub async fn run_notifier(pool: SqlitePool, config: NotificationsConfig) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::f1::calendar::{save_calendar_to_cache, F1Session, F1SessionSlot};
+    use crate::providers::f1::calendar::{F1Session, F1SessionSlot, save_calendar_to_cache};
     use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
     async fn setup_test_db() -> SqlitePool {
@@ -303,7 +306,9 @@ mod tests {
             }],
         };
 
-        save_calendar_to_cache(&pool, now.year() as u32, &[session]).await.unwrap();
+        save_calendar_to_cache(&pool, now.year() as u32, &[session])
+            .await
+            .unwrap();
 
         // First check: should insert 1 notification
         check_and_notify_f1(&pool, 15).await.unwrap();

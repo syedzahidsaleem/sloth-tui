@@ -39,7 +39,9 @@ async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
                 let req = String::from_utf8_lossy(&buf[..n]);
                 let first_line = req.lines().next().unwrap_or("");
 
-                let (status, body) = if first_line.starts_with("HEAD /") || first_line.starts_with("GET / ") {
+                let (status, body) = if first_line.starts_with("HEAD /")
+                    || first_line.starts_with("GET / ")
+                {
                     ("200 OK", "")
                 } else if first_line.contains("/api/v2/hianime/search") {
                     if first_line.contains("q=Naruto") {
@@ -151,10 +153,16 @@ async fn test_resolve_episode_1_returns_stream_url() {
         .headers
         .iter()
         .any(|(k, v)| k.eq_ignore_ascii_case("Referer") && v == "https://hianime.to");
-    assert!(has_referer, "Headers must include Referer: https://hianime.to");
+    assert!(
+        has_referer,
+        "Headers must include Referer: https://hianime.to"
+    );
 
     // Verify English subtitle URL
-    assert!(stream.subtitle_url.is_some(), "Subtitle URL should be present");
+    assert!(
+        stream.subtitle_url.is_some(),
+        "Subtitle URL should be present"
+    );
     assert!(
         stream
             .subtitle_url
@@ -185,7 +193,10 @@ async fn test_health_returns_true_when_server_responds_200() {
     let provider = HiAnimeProvider::with_base_url(client, base_url);
 
     let healthy = provider.health().await;
-    assert!(healthy, "health() should return true when server responds 200");
+    assert!(
+        healthy,
+        "health() should return true when server responds 200"
+    );
 }
 
 #[tokio::test]

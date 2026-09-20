@@ -4,12 +4,12 @@ pub mod client;
 
 pub use client::{DhakaFlixClient, DhakaFlixError};
 
-use async_trait::async_trait;
 use crate::providers::models::{
     CatalogItem, EpisodeRef, Media, MediaType, ProviderError, ProviderKind, Quality, Release,
     StreamUrl,
 };
 use crate::providers::{Provider, ProviderCapabilities, ReleaseProvider};
+use async_trait::async_trait;
 
 impl From<DhakaFlixError> for ProviderError {
     fn from(err: DhakaFlixError) -> Self {

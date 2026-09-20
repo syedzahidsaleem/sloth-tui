@@ -1158,7 +1158,10 @@ impl App {
 
     pub(crate) fn current_playback_media(
         &self,
-    ) -> (crate::providers::models::Media, Option<crate::providers::models::EpisodeRef>) {
+    ) -> (
+        crate::providers::models::Media,
+        Option<crate::providers::models::EpisodeRef>,
+    ) {
         let episode_ref = if self.state.selected_episode > 0 || self.state.selected_season > 0 {
             let ep_title = self.state.selected_details.as_ref().and_then(|d| {
                 d.seasons

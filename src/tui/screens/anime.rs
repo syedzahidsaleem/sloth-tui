@@ -6,8 +6,8 @@ use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{
-        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation,
-        ScrollbarState, Wrap,
+        Block, BorderType, Borders, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState,
+        Wrap,
     },
 };
 
@@ -21,21 +21,15 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme: &Them
     }
 
     // Split into main panel area and bottom control bar
-    let vertical_layout = Layout::vertical([
-        Constraint::Min(0),
-        Constraint::Length(2),
-    ])
-    .split(area);
+    let vertical_layout = Layout::vertical([Constraint::Min(0), Constraint::Length(2)]).split(area);
 
     let panels_area = vertical_layout[0];
     let bottom_area = vertical_layout[1];
 
     // Two-panel layout: Left (35% results) and Right (65% details/episodes)
-    let panel_columns = Layout::horizontal([
-        Constraint::Percentage(35),
-        Constraint::Percentage(65),
-    ])
-    .split(panels_area);
+    let panel_columns =
+        Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
+            .split(panels_area);
 
     let left_area = panel_columns[0];
     let right_area = panel_columns[1];
@@ -72,14 +66,8 @@ fn render_left_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
     if state.results.is_empty() {
         let placeholder = Paragraph::new(vec![
             Line::from(""),
-            Line::from(Span::styled(
-                "Search for anime above",
-                theme.text_dim,
-            )),
-            Line::from(Span::styled(
-                "Type '/' or click search bar",
-                theme.text_dim,
-            )),
+            Line::from(Span::styled("Search for anime above", theme.text_dim)),
+            Line::from(Span::styled("Type '/' or click search bar", theme.text_dim)),
         ])
         .alignment(Alignment::Center);
         frame.render_widget(placeholder, inner);
@@ -118,7 +106,14 @@ fn render_left_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
         // Line 1: Title + prefix indicator
         let prefix = if is_selected { "> " } else { "  " };
         let title_spans = vec![
-            Span::styled(prefix, if is_selected { title_style } else { theme.accent }),
+            Span::styled(
+                prefix,
+                if is_selected {
+                    title_style
+                } else {
+                    theme.accent
+                },
+            ),
             Span::styled(&anime.title, title_style),
         ];
 
@@ -147,8 +142,7 @@ fn render_left_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
     // Render scrollbar if results exceed visible area
     if total_items > visible_items {
         let mut scrollbar_state =
-            ScrollbarState::new(total_items.saturating_sub(visible_items))
-                .position(scroll_offset);
+            ScrollbarState::new(total_items.saturating_sub(visible_items)).position(scroll_offset);
         let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("▲"))
             .end_symbol(Some("▼"));
@@ -184,10 +178,7 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
     if selected_anime.is_none() {
         let placeholder = Paragraph::new(vec![
             Line::from(""),
-            Line::from(Span::styled(
-                "Search for anime above",
-                theme.text_dim,
-            )),
+            Line::from(Span::styled("Search for anime above", theme.text_dim)),
         ])
         .alignment(Alignment::Center);
         frame.render_widget(placeholder, inner);
@@ -221,32 +212,28 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
     };
 
     let meta_lines = vec![
-        Line::from(vec![
-            Span::styled(
-                anime.title.to_uppercase(),
-                Style::default()
-                    .add_modifier(Modifier::BOLD)
-                    .fg(theme.accent.fg.unwrap_or(Color::Cyan)),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            anime.title.to_uppercase(),
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(theme.accent.fg.unwrap_or(Color::Cyan)),
+        )]),
         Line::from(vec![
             Span::styled("  ⛩ AniList: ", theme.lavender),
             Span::styled("Completed  ", theme.teal),
             Span::styled(format!("{rating_str}  "), theme.rating),
             Span::styled(format!("•  Genres: {genres_str}"), theme.text_dim),
         ]),
-        Line::from(vec![
-            Span::styled(
-                format!(
-                    "  {}",
-                    anime
-                        .overview
-                        .as_deref()
-                        .unwrap_or("A legendary anime series following epic adventures.")
-                ),
-                theme.text_dim,
+        Line::from(vec![Span::styled(
+            format!(
+                "  {}",
+                anime
+                    .overview
+                    .as_deref()
+                    .unwrap_or("A legendary anime series following epic adventures.")
             ),
-        ]),
+            theme.text_dim,
+        )]),
     ];
 
     let meta_p = Paragraph::new(meta_lines).wrap(Wrap { trim: true });

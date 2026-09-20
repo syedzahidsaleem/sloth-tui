@@ -1,7 +1,7 @@
 //! TheMovieDatabase (TMDB) API v3 metadata provider and enrichment service.
 
-use crate::providers::models::{CastMember, EpisodeRef, Media, MediaType};
 use crate::SlothError;
+use crate::providers::models::{CastMember, EpisodeRef, Media, MediaType};
 use serde::Deserialize;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -354,7 +354,11 @@ impl TmdbClient {
                         }
                         if let Some(genres) = details.genres {
                             for g in genres {
-                                if !media.genres.iter().any(|existing| existing.eq_ignore_ascii_case(&g.name)) {
+                                if !media
+                                    .genres
+                                    .iter()
+                                    .any(|existing| existing.eq_ignore_ascii_case(&g.name))
+                                {
                                     media.genres.push(g.name);
                                 }
                             }
@@ -403,7 +407,11 @@ impl TmdbClient {
                         }
                         if let Some(genres) = details.genres {
                             for g in genres {
-                                if !media.genres.iter().any(|existing| existing.eq_ignore_ascii_case(&g.name)) {
+                                if !media
+                                    .genres
+                                    .iter()
+                                    .any(|existing| existing.eq_ignore_ascii_case(&g.name))
+                                {
                                     media.genres.push(g.name);
                                 }
                             }

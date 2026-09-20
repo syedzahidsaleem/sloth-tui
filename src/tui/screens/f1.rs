@@ -42,9 +42,11 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
 
     if state.f1_tab.loading {
         let spinner = crate::tui::widgets::loading_spinner(state.tick_count, false);
-        let p = Paragraph::new(format!("{spinner} Fetching F1 calendar & session schedule..."))
-            .style(theme.teal)
-            .alignment(Alignment::Center);
+        let p = Paragraph::new(format!(
+            "{spinner} Fetching F1 calendar & session schedule..."
+        ))
+        .style(theme.teal)
+        .alignment(Alignment::Center);
         f.render_widget(p, inner);
         return;
     }
@@ -65,13 +67,21 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
             let header_line = Line::from(vec![
                 Span::styled("⏰ NEXT: ", theme.rating.add_modifier(Modifier::BOLD)),
                 Span::styled(
-                    format!("{} {} — {}", slot.kind.icon(), session.name.to_uppercase(), slot.kind.label()),
+                    format!(
+                        "{} {} — {}",
+                        slot.kind.icon(),
+                        session.name.to_uppercase(),
+                        slot.kind.label()
+                    ),
                     theme.text.add_modifier(Modifier::BOLD),
                 ),
             ]);
 
             let loc_str = if !session.city.is_empty() && !session.country.is_empty() {
-                format!("{} · {}, {}", session.circuit, session.city, session.country)
+                format!(
+                    "{} · {}, {}",
+                    session.circuit, session.city, session.country
+                )
             } else if !session.country.is_empty() {
                 format!("{} · {}", session.circuit, session.country)
             } else {
@@ -83,10 +93,16 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
                 Span::styled(loc_str, theme.text_dim),
             ]);
 
-            f.render_widget(Paragraph::new(vec![header_line, circuit_line]), hero_chunks[0]);
+            f.render_widget(
+                Paragraph::new(vec![header_line, circuit_line]),
+                hero_chunks[0],
+            );
 
             // 2. Countdown Widget
-            let countdown_label = format!("STARTS IN ({} UTC)", slot.starts_at.format("%a, %b %d @ %H:%M"));
+            let countdown_label = format!(
+                "STARTS IN ({} UTC)",
+                slot.starts_at.format("%a, %b %d @ %H:%M")
+            );
             let widget = CountdownWidget::new(slot.starts_at, countdown_label);
             widget.render_with_theme(hero_chunks[1], f.buffer_mut(), theme);
 
@@ -107,7 +123,10 @@ fn render_next_session_box(f: &mut Frame, area: Rect, state: &AppState, theme: &
                     theme.text.bg(theme.bg_elevated),
                 ),
             ]);
-            f.render_widget(Paragraph::new(vec![Line::raw(""), buttons_line]), hero_chunks[2]);
+            f.render_widget(
+                Paragraph::new(vec![Line::raw(""), buttons_line]),
+                hero_chunks[2],
+            );
         }
         None => {
             let msg = if state.f1_tab.calendar.is_empty() {
@@ -143,11 +162,15 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
     let now = Utc::now();
     let next_round = next_session(&state.f1_tab.calendar).map(|(s, _)| s.round);
 
-    let header_cells = ["Round", "Grand Prix Event", "Circuit / Location", "Date", "Status"]
-        .iter()
-        .map(|h| {
-            Cell::from(*h).style(theme.accent.add_modifier(Modifier::BOLD))
-        });
+    let header_cells = [
+        "Round",
+        "Grand Prix Event",
+        "Circuit / Location",
+        "Date",
+        "Status",
+    ]
+    .iter()
+    .map(|h| Cell::from(*h).style(theme.accent.add_modifier(Modifier::BOLD)));
     let header = Row::new(header_cells)
         .style(Style::default().bg(theme.bg_elevated))
         .height(1)
@@ -176,7 +199,9 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
                 let last_fmt = last.starts_at.format("%b %d").to_string();
                 if first_fmt == last_fmt {
                     first_fmt
-                } else if first.starts_at.format("%b").to_string() == last.starts_at.format("%b").to_string() {
+                } else if first.starts_at.format("%b").to_string()
+                    == last.starts_at.format("%b").to_string()
+                {
                     format!("{}-{}", first_fmt, last.starts_at.format("%d"))
                 } else {
                     format!("{first_fmt} - {last_fmt}")
@@ -256,9 +281,9 @@ fn render_footer(f: &mut Frame, area: Rect, theme: &Theme) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ratatui::backend::TestBackend;
-    use ratatui::Terminal;
     use crate::providers::f1::calendar::{F1Session, F1SessionKind, F1SessionSlot};
+    use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     #[test]
     fn test_f1_screen_renders_without_panic() {

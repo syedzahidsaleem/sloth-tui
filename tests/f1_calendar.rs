@@ -2,7 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use sloth_tui::providers::f1::calendar::{
-    next_session_at, parse_calendar_json, time_until_at, F1SessionKind,
+    F1SessionKind, next_session_at, parse_calendar_json, time_until_at,
 };
 
 const FIXTURE_JSON: &str = include_str!("fixtures/f1/calendar_2026.json");
@@ -20,7 +20,11 @@ fn test_calendar_parses_correctly_from_fixture() {
     assert_eq!(r1.circuit, "Bahrain International Circuit");
     assert_eq!(r1.country, "Bahrain");
     assert_eq!(r1.city, "Sakhir");
-    assert_eq!(r1.sessions.len(), 5, "Expected FP1, FP2, FP3, Qualifying, Race");
+    assert_eq!(
+        r1.sessions.len(),
+        5,
+        "Expected FP1, FP2, FP3, Qualifying, Race"
+    );
 
     assert_eq!(r1.sessions[0].kind, F1SessionKind::FreePractice1);
     assert_eq!(r1.sessions[1].kind, F1SessionKind::FreePractice2);

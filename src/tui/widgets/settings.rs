@@ -1307,4 +1307,3 @@ mod tests {
         assert_eq!(after, "\\Downloads");
     }
 }
-

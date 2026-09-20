@@ -6,11 +6,9 @@ pub mod parser;
 pub use models::Channel;
 pub use parser::M3UParser;
 
-use async_trait::async_trait;
-use crate::providers::models::{
-    EpisodeRef, Media, MediaType, ProviderError, Quality, StreamUrl,
-};
+use crate::providers::models::{EpisodeRef, Media, MediaType, ProviderError, Quality, StreamUrl};
 use crate::providers::{Provider, ProviderCapabilities};
+use async_trait::async_trait;
 
 #[async_trait]
 impl Provider for M3UParser {

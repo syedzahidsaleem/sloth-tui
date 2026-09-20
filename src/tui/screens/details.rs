@@ -521,9 +521,10 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
         badge_spans.push(Span::styled(imdb_rating, b_rating_s));
     }
 
-    let tmdb_rating_opt = state.selected_media.as_ref().and_then(|m| {
-        m.rating.filter(|&r| r > 0.0).map(|r| format!("{:.1}", r))
-    });
+    let tmdb_rating_opt = state
+        .selected_media
+        .as_ref()
+        .and_then(|m| m.rating.filter(|&r| r > 0.0).map(|r| format!("{:.1}", r)));
 
     if let Some(tmdb_rating) = tmdb_rating_opt {
         badge_spans.push(Span::styled(bullet_sep, b_sep_s));
@@ -607,11 +608,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     };
     if !details.genres.is_empty() {
         let label_w = 7;
-        let genre_badges: Vec<String> = details
-            .genres
-            .iter()
-            .map(|g| format!("[{g}]"))
-            .collect();
+        let genre_badges: Vec<String> = details.genres.iter().map(|g| format!("[{g}]")).collect();
         let genres_str = genre_badges.join(" ");
         let val_w = crate::tui::text::width(&genres_str);
         if label_w + 4 <= text_width {
@@ -625,7 +622,11 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
             extra_meta_w += label_w + crate::tui::text::width(&display_genres);
             extra_meta_spans.push(Span::styled(
                 display_genres,
-                if modal_active { theme.muted } else { theme.accent },
+                if modal_active {
+                    theme.muted
+                } else {
+                    theme.accent
+                },
             ));
         }
     }
@@ -1475,10 +1476,14 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
     .alignment(Alignment::Center);
     frame.render_widget(footer_p, footer_area);
 
-    let tmdb_attr = Line::from(vec![
-        Span::styled("Powered by TMDB ", theme.muted.add_modifier(Modifier::DIM)),
-    ]);
-    frame.render_widget(Paragraph::new(tmdb_attr).alignment(Alignment::Right), footer_area);
+    let tmdb_attr = Line::from(vec![Span::styled(
+        "Powered by TMDB ",
+        theme.muted.add_modifier(Modifier::DIM),
+    )]);
+    frame.render_widget(
+        Paragraph::new(tmdb_attr).alignment(Alignment::Right),
+        footer_area,
+    );
 
     if state.show_overview_modal {
         crate::tui::overlay::overview_modal(

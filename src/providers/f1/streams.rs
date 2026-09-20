@@ -47,9 +47,7 @@ pub fn parse_f1_m3u(content: &str) -> Vec<StreamUrl> {
                 url: ch.stream_url,
                 quality: Quality::Auto,
                 is_hls,
-                headers: vec![
-                    ("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string()),
-                ],
+                headers: vec![("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string())],
                 subtitle_url: None,
                 provider_id: "f1",
             }
@@ -60,20 +58,23 @@ pub fn parse_f1_m3u(content: &str) -> Vec<StreamUrl> {
 /// Fetches sports channels from iptv-org and returns Formula 1 streams.
 pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
     let parser = M3UParser::new();
-    match parser.fetch_playlist(SPORTS_M3U_URL).await.map_err(|e| e.to_string()) {
+    match parser
+        .fetch_playlist(SPORTS_M3U_URL)
+        .await
+        .map_err(|e| e.to_string())
+    {
         Ok(channels) => {
             let streams = channels
                 .into_iter()
                 .filter(|ch| is_f1_channel(&ch.name, &ch.group))
                 .map(|ch| {
-                    let is_hls = ch.stream_url.contains(".m3u8") || !ch.stream_url.ends_with(".mp4");
+                    let is_hls =
+                        ch.stream_url.contains(".m3u8") || !ch.stream_url.ends_with(".mp4");
                     StreamUrl {
                         url: ch.stream_url,
                         quality: Quality::Auto,
                         is_hls,
-                        headers: vec![
-                            ("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string()),
-                        ],
+                        headers: vec![("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string())],
                         subtitle_url: None,
                         provider_id: "f1",
                     }
@@ -82,22 +83,25 @@ pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
             Ok(streams)
         }
         Err(err_msg) => {
-            tracing::warn!("Failed to fetch iptv-org sports playlist: {err_msg}, falling back to direct HTTP");
+            tracing::warn!(
+                "Failed to fetch iptv-org sports playlist: {err_msg}, falling back to direct HTTP"
+            );
             let client = crate::net::http_client_builder()
                 .timeout(Duration::from_secs(10))
                 .build()
                 .unwrap_or_default();
 
-            let resp = client
-                .get(SPORTS_M3U_URL)
-                .send()
-                .await
-                .map_err(|e| SlothError::Provider(ProviderError::Network(format!("Failed to download F1 streams: {e}"))))?;
+            let resp = client.get(SPORTS_M3U_URL).send().await.map_err(|e| {
+                SlothError::Provider(ProviderError::Network(format!(
+                    "Failed to download F1 streams: {e}"
+                )))
+            })?;
 
-            let text = resp
-                .text()
-                .await
-                .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to read F1 streams playlist: {e}"))))?;
+            let text = resp.text().await.map_err(|e| {
+                SlothError::Provider(ProviderError::Parsing(format!(
+                    "Failed to read F1 streams playlist: {e}"
+                )))
+            })?;
 
             Ok(parse_f1_m3u(&text))
         }
@@ -192,7 +196,10 @@ https://stream.example.com/f1tv.m3u8
 "#;
         let streams = parse_f1_m3u(sample);
         assert_eq!(streams.len(), 2);
-        assert_eq!(streams[0].url, "https://stream.example.com/skysportsf1.m3u8");
+        assert_eq!(
+            streams[0].url,
+            "https://stream.example.com/skysportsf1.m3u8"
+        );
         assert_eq!(streams[1].url, "https://stream.example.com/f1tv.m3u8");
     }
 }

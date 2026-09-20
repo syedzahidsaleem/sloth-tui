@@ -112,7 +112,9 @@ impl AllAnimeProvider {
             .map_err(|e| ProviderError::Network(e.to_string()))?;
 
         let gql_response: GraphQLResponse<T> = serde_json::from_str(&resp_text).map_err(|e| {
-            ProviderError::Parsing(format!("Failed to deserialize AllAnime GraphQL response: {e}"))
+            ProviderError::Parsing(format!(
+                "Failed to deserialize AllAnime GraphQL response: {e}"
+            ))
         })?;
 
         if let Some(data) = gql_response.data {
@@ -123,7 +125,9 @@ impl AllAnimeProvider {
                 .map(|err| err.message)
                 .collect::<Vec<_>>()
                 .join("; ");
-            Err(ProviderError::Parsing(format!("AllAnime GraphQL error: {error_msgs}")))
+            Err(ProviderError::Parsing(format!(
+                "AllAnime GraphQL error: {error_msgs}"
+            )))
         } else {
             Err(ProviderError::NotFound)
         }
@@ -304,11 +308,7 @@ impl Provider for AllAnimeProvider {
         Ok(streams)
     }
 
-    async fn episodes(
-        &self,
-        media: &Media,
-        season: u32,
-    ) -> Result<Vec<EpisodeRef>, ProviderError> {
+    async fn episodes(&self, media: &Media, season: u32) -> Result<Vec<EpisodeRef>, ProviderError> {
         let count = media.episodes_count.unwrap_or(1);
         let s = if season == 0 { 1 } else { season };
         let list = (1..=count)

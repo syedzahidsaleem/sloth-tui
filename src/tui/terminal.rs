@@ -48,8 +48,8 @@ pub fn should_query_images() -> bool {
     {
         return false;
     }
-    if let Ok(forced) = std::env::var("SLOTH_IMAGE_PROTOCOL")
-        .or_else(|_| std::env::var("MOVIEBOX_IMAGE_PROTOCOL"))
+    if let Ok(forced) =
+        std::env::var("SLOTH_IMAGE_PROTOCOL").or_else(|_| std::env::var("MOVIEBOX_IMAGE_PROTOCOL"))
     {
         let forced = forced.trim();
         if forced.eq_ignore_ascii_case("none")

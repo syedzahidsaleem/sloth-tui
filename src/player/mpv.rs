@@ -5,9 +5,9 @@ use std::time::Duration;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use uuid::Uuid;
 
+use crate::SlothError;
 use crate::config::PlayerConfig;
 use crate::providers::models::StreamUrl;
-use crate::SlothError;
 
 /// Deserialized mpv JSON IPC response.
 #[derive(Debug, Clone, serde::Deserialize)]

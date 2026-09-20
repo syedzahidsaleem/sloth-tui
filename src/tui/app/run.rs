@@ -533,7 +533,13 @@ impl App {
                 self.state.anime_tab.airing_schedule = schedule;
             }
             Action::SportSelected(sport) => {
-                if let Some(pos) = self.state.sports_tab.sports.iter().position(|s| s == &sport) {
+                if let Some(pos) = self
+                    .state
+                    .sports_tab
+                    .sports
+                    .iter()
+                    .position(|s| s == &sport)
+                {
                     self.state.sports_tab.selected_sport_idx = pos;
                 }
             }
@@ -545,14 +551,21 @@ impl App {
                 }
             }
             Action::MatchSelected(id) => {
-                if let Some(pos) = self.state.sports_tab.matches.iter().position(|m| m.id == id) {
+                if let Some(pos) = self
+                    .state
+                    .sports_tab
+                    .matches
+                    .iter()
+                    .position(|m| m.id == id)
+                {
                     self.state.sports_tab.selected_match_idx = pos;
                 }
             }
             Action::StreamListReceived(streams) => {
                 self.state.sports_tab.streams = streams;
                 self.state.is_loading = false;
-                if self.state.sports_tab.selected_stream_idx >= self.state.sports_tab.streams.len() {
+                if self.state.sports_tab.selected_stream_idx >= self.state.sports_tab.streams.len()
+                {
                     self.state.sports_tab.selected_stream_idx = 0;
                 }
             }
@@ -568,7 +581,11 @@ impl App {
                 }
             }
             Action::F1SessionSelected(session) => {
-                crate::tui::app::f1::handle_f1_session_play(&mut self.state, &self.action_sender, Some(&session));
+                crate::tui::app::f1::handle_f1_session_play(
+                    &mut self.state,
+                    &self.action_sender,
+                    Some(&session),
+                );
             }
             Action::SearchResultsReceived(results) => {
                 self.state.anime_tab.results = results;
@@ -581,7 +598,9 @@ impl App {
                 let (media, episode) = self.current_playback_media();
                 self.discord_rpc.set_watching(&media, episode.as_ref());
             }
-            Action::PlaybackEnded { resume_position_secs } => {
+            Action::PlaybackEnded {
+                resume_position_secs,
+            } => {
                 self.state.is_playing = false;
                 self.handle_playback_ended(resume_position_secs);
                 self.discord_rpc.set_browsing();

@@ -958,7 +958,10 @@ impl App {
                     poster_url: details.cover_url().map(|s| s.to_string()),
                     backdrop_url: None,
                     genres: details.genres.clone(),
-                    rating: details.imdb_rating.as_deref().and_then(|r| r.parse::<f32>().ok()),
+                    rating: details
+                        .imdb_rating
+                        .as_deref()
+                        .and_then(|r| r.parse::<f32>().ok()),
                     duration_secs: None,
                     seasons_count: None,
                     episodes_count: None,

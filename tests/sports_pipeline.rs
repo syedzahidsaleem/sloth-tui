@@ -36,19 +36,20 @@ async fn spawn_mock_server() -> (String, tokio::task::JoinHandle<()>) {
                 let req = String::from_utf8_lossy(&buf[..n]);
                 let first_line = req.lines().next().unwrap_or("");
 
-                let (status, body) = if first_line.starts_with("HEAD /") || first_line.starts_with("GET / ") {
-                    ("200 OK", "")
-                } else if first_line.contains("/api/matches/live") {
-                    ("200 OK", LIVE_MATCHES_JSON)
-                } else if first_line.contains("/api/matches/all-sports") {
-                    ("200 OK", LIVE_MATCHES_JSON)
-                } else if first_line.contains("/api/matches/football") {
-                    ("200 OK", LIVE_MATCHES_JSON)
-                } else if first_line.contains("/api/stream/") {
-                    ("200 OK", STREAM_SOURCES_JSON)
-                } else {
-                    ("404 Not Found", "{}")
-                };
+                let (status, body) =
+                    if first_line.starts_with("HEAD /") || first_line.starts_with("GET / ") {
+                        ("200 OK", "")
+                    } else if first_line.contains("/api/matches/live") {
+                        ("200 OK", LIVE_MATCHES_JSON)
+                    } else if first_line.contains("/api/matches/all-sports") {
+                        ("200 OK", LIVE_MATCHES_JSON)
+                    } else if first_line.contains("/api/matches/football") {
+                        ("200 OK", LIVE_MATCHES_JSON)
+                    } else if first_line.contains("/api/stream/") {
+                        ("200 OK", STREAM_SOURCES_JSON)
+                    } else {
+                        ("404 Not Found", "{}")
+                    };
 
                 let content_len = body.len();
                 let response = format!(
@@ -240,7 +241,11 @@ async fn test_provider_registry_sports_chain() {
     let registry = ProviderRegistry::new(&Config::default());
     let chain = registry.chain_for(&MediaType::LiveSport);
 
-    assert_eq!(chain.len(), 1, "sports_chain must have 1 provider registered");
+    assert_eq!(
+        chain.len(),
+        1,
+        "sports_chain must have 1 provider registered"
+    );
     let provider = &chain[0];
     assert_eq!(provider.id(), "streamed-pk");
     assert_eq!(provider.name(), "Streamed");

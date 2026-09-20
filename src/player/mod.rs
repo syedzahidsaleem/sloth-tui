@@ -1172,12 +1172,7 @@ fn probe_mpv() -> Option<String> {
         &["mpv", "io.mpv.Mpv"][..]
     };
 
-    probe_player_executable(
-        "SLOTH_MPV_PATH",
-        &candidates,
-        bin_names,
-        Some("io.mpv.Mpv"),
-    )
+    probe_player_executable("SLOTH_MPV_PATH", &candidates, bin_names, Some("io.mpv.Mpv"))
 }
 
 fn probe_vlc() -> Option<String> {
@@ -1496,12 +1491,13 @@ mod tests {
 
     #[test]
     fn test_format_mpv_script_opts_windows_paths() {
-        let win_path = PathBuf::from(
-            r"C:\Users\User\AppData\Local\Sloth-Tui\playback\moviebox_123_1_1.json",
-        );
+        let win_path =
+            PathBuf::from(r"C:\Users\User\AppData\Local\Sloth-Tui\playback\moviebox_123_1_1.json");
         let opts = format_mpv_script_opts("moviebox", "123", 1, 1, &win_path);
         assert!(!opts.contains(r"\"));
-        assert!(opts.contains("sloth-state_file=C:/Users/User/AppData/Local/Sloth-Tui/playback/moviebox_123_1_1.json"));
+        assert!(opts.contains(
+            "sloth-state_file=C:/Users/User/AppData/Local/Sloth-Tui/playback/moviebox_123_1_1.json"
+        ));
         assert!(opts.contains("moviebox-state_file=C:/Users/User/AppData/Local/Sloth-Tui/playback/moviebox_123_1_1.json"));
     }
 
@@ -1510,8 +1506,12 @@ mod tests {
         let unix_path =
             PathBuf::from("/home/user/.local/share/sloth-tui/playback/moviebox_123_1_1.json");
         let opts = format_mpv_script_opts("moviebox", "123", 1, 1, &unix_path);
-        assert!(opts.contains("sloth-state_file=/home/user/.local/share/sloth-tui/playback/moviebox_123_1_1.json"));
-        assert!(opts.contains("moviebox-state_file=/home/user/.local/share/sloth-tui/playback/moviebox_123_1_1.json"));
+        assert!(opts.contains(
+            "sloth-state_file=/home/user/.local/share/sloth-tui/playback/moviebox_123_1_1.json"
+        ));
+        assert!(opts.contains(
+            "moviebox-state_file=/home/user/.local/share/sloth-tui/playback/moviebox_123_1_1.json"
+        ));
     }
 
     #[test]
@@ -1560,9 +1560,7 @@ mod tests {
             .map(|arg| arg.to_string_lossy().into_owned())
             .collect::<Vec<_>>();
         assert!(
-            args.contains(
-                &"--sub-file=C:/Users/User/AppData/Local/Sloth-Tui/subs/sub.srt".into()
-            )
+            args.contains(&"--sub-file=C:/Users/User/AppData/Local/Sloth-Tui/subs/sub.srt".into())
         );
     }
 

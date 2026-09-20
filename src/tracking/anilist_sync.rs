@@ -1,8 +1,8 @@
 //! AniList OAuth implicit grant client and watch progress synchronizer.
 
-use std::sync::Arc;
 use serde::de::DeserializeOwned;
 use sqlx::{Row, SqlitePool};
+use std::sync::Arc;
 
 use crate::SlothError;
 
@@ -159,9 +159,9 @@ impl AniListClient {
             ))));
         }
 
-        let data = body
-            .get("data")
-            .ok_or_else(|| SlothError::Io(std::io::Error::other("Missing 'data' in GraphQL response")))?;
+        let data = body.get("data").ok_or_else(|| {
+            SlothError::Io(std::io::Error::other("Missing 'data' in GraphQL response"))
+        })?;
 
         serde_json::from_value(data.clone()).map_err(|e| SlothError::Io(std::io::Error::other(e)))
     }
@@ -411,11 +411,9 @@ impl AniListClient {
 
     /// Synchronizes all locally queued entries marked as `dirty = 1` to AniList.
     pub async fn sync_dirty_entries(&self, pool: &SqlitePool) -> Result<(), SlothError> {
-        let rows = sqlx::query(
-            "SELECT anilist_id, progress FROM anilist_entries WHERE dirty = 1",
-        )
-        .fetch_all(pool)
-        .await?;
+        let rows = sqlx::query("SELECT anilist_id, progress FROM anilist_entries WHERE dirty = 1")
+            .fetch_all(pool)
+            .await?;
 
         for row in rows {
             let anilist_id: i64 = row.get("anilist_id");
@@ -513,7 +511,10 @@ mod tests {
         // Authenticate succeeds
         let client = AniListClient::authenticate(&pool).await.expect("query");
         assert!(client.is_some());
-        assert_eq!(client.unwrap().access_token.as_deref(), Some("test_token_xyz"));
+        assert_eq!(
+            client.unwrap().access_token.as_deref(),
+            Some("test_token_xyz")
+        );
 
         // Logout
         AniListClient::logout(&pool).await.expect("logout");

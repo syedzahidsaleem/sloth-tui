@@ -1,10 +1,10 @@
 //! Formula 1 calendar provider fetching race schedules from Jolpica / Ergast API
 //! and caching them in SQLite with a 24-hour TTL.
 
-use std::time::Duration;
 use chrono::{DateTime, NaiveDate, Utc};
 use serde::Deserialize;
 use sqlx::{Row, SqlitePool};
+use std::time::Duration;
 
 use crate::SlothError;
 use crate::providers::models::ProviderError;
@@ -79,7 +79,10 @@ struct ErgastSessionTime {
 fn parse_datetime(date_str: &str, time_str: Option<&str>) -> Option<DateTime<Utc>> {
     let raw_time = time_str.unwrap_or("12:00:00Z");
     let trimmed_time = raw_time.trim();
-    let formatted = if trimmed_time.ends_with('Z') || trimmed_time.contains('+') || trimmed_time.contains('-') {
+    let formatted = if trimmed_time.ends_with('Z')
+        || trimmed_time.contains('+')
+        || trimmed_time.contains('-')
+    {
         format!("{}T{}", date_str.trim(), trimmed_time)
     } else {
         format!("{}T{}Z", date_str.trim(), trimmed_time)
@@ -99,8 +102,11 @@ fn parse_datetime(date_str: &str, time_str: Option<&str>) -> Option<DateTime<Utc
 
 /// Parses a raw Ergast / Jolpica JSON response into a list of [`F1Session`] items.
 pub fn parse_calendar_json(json: &str) -> Result<Vec<F1Session>, SlothError> {
-    let resp: ErgastResponse = serde_json::from_str(json)
-        .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to parse F1 calendar JSON: {e}"))))?;
+    let resp: ErgastResponse = serde_json::from_str(json).map_err(|e| {
+        SlothError::Provider(ProviderError::Parsing(format!(
+            "Failed to parse F1 calendar JSON: {e}"
+        )))
+    })?;
 
     let races = resp
         .mr_data
@@ -292,12 +298,36 @@ pub async fn get_cached_calendar(
             }
         };
 
-        add_slot(row.try_get("fp1_time").ok(), F1SessionKind::FreePractice1, &mut slots);
-        add_slot(row.try_get("fp2_time").ok(), F1SessionKind::FreePractice2, &mut slots);
-        add_slot(row.try_get("fp3_time").ok(), F1SessionKind::FreePractice3, &mut slots);
-        add_slot(row.try_get("sprint_time").ok(), F1SessionKind::Sprint, &mut slots);
-        add_slot(row.try_get("qualifying_time").ok(), F1SessionKind::Qualifying, &mut slots);
-        add_slot(row.try_get("race_time").ok(), F1SessionKind::Race, &mut slots);
+        add_slot(
+            row.try_get("fp1_time").ok(),
+            F1SessionKind::FreePractice1,
+            &mut slots,
+        );
+        add_slot(
+            row.try_get("fp2_time").ok(),
+            F1SessionKind::FreePractice2,
+            &mut slots,
+        );
+        add_slot(
+            row.try_get("fp3_time").ok(),
+            F1SessionKind::FreePractice3,
+            &mut slots,
+        );
+        add_slot(
+            row.try_get("sprint_time").ok(),
+            F1SessionKind::Sprint,
+            &mut slots,
+        );
+        add_slot(
+            row.try_get("qualifying_time").ok(),
+            F1SessionKind::Qualifying,
+            &mut slots,
+        );
+        add_slot(
+            row.try_get("race_time").ok(),
+            F1SessionKind::Race,
+            &mut slots,
+        );
 
         slots.sort_by_key(|s| s.starts_at);
 
@@ -341,7 +371,11 @@ pub async fn save_calendar_to_cache(
         }
 
         if race_time == 0 {
-            race_time = s.sessions.last().map(|sl| sl.starts_at.timestamp()).unwrap_or(0);
+            race_time = s
+                .sessions
+                .last()
+                .map(|sl| sl.starts_at.timestamp())
+                .unwrap_or(0);
         }
 
         sqlx::query(
@@ -417,14 +451,16 @@ pub async fn fetch_calendar_with_pool(
         Some(t) => t,
         None => {
             // Fallback to Ergast API
-            let resp = client
-                .get(&ergast_url)
-                .send()
-                .await
-                .map_err(|e| SlothError::Provider(ProviderError::Network(format!("Failed to reach F1 API: {e}"))))?;
-            resp.text()
-                .await
-                .map_err(|e| SlothError::Provider(ProviderError::Parsing(format!("Failed to read F1 API body: {e}"))))?
+            let resp = client.get(&ergast_url).send().await.map_err(|e| {
+                SlothError::Provider(ProviderError::Network(format!(
+                    "Failed to reach F1 API: {e}"
+                )))
+            })?;
+            resp.text().await.map_err(|e| {
+                SlothError::Provider(ProviderError::Parsing(format!(
+                    "Failed to read F1 API body: {e}"
+                )))
+            })?
         }
     };
 
@@ -495,7 +531,11 @@ mod tests {
         assert_eq!(r1.circuit, "Bahrain International Circuit");
         assert_eq!(r1.country, "Bahrain");
         assert_eq!(r1.city, "Sakhir");
-        assert_eq!(r1.sessions.len(), 5, "Expected FP1, FP2, FP3, Qualifying, Race");
+        assert_eq!(
+            r1.sessions.len(),
+            5,
+            "Expected FP1, FP2, FP3, Qualifying, Race"
+        );
 
         assert_eq!(r1.sessions[0].kind, F1SessionKind::FreePractice1);
         assert_eq!(r1.sessions[1].kind, F1SessionKind::FreePractice2);
@@ -546,9 +586,10 @@ mod tests {
         assert_eq!(slot.kind, F1SessionKind::FreePractice1);
 
         // Case 2: Right before Bahrain Race on March 1, 2026
-        let before_bahrain_race: DateTime<Utc> = DateTime::parse_from_rfc3339("2026-03-01T14:30:00Z")
-            .unwrap()
-            .with_timezone(&Utc);
+        let before_bahrain_race: DateTime<Utc> =
+            DateTime::parse_from_rfc3339("2026-03-01T14:30:00Z")
+                .unwrap()
+                .with_timezone(&Utc);
         let (session, slot) = next_session_at(&calendar, before_bahrain_race)
             .expect("Should find Bahrain Race as next session");
         assert_eq!(session.round, 1);

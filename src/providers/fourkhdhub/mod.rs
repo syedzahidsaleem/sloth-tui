@@ -6,12 +6,12 @@ pub mod parser;
 
 pub use client::{FourKHdHubClient, FourKHdHubError};
 
-use async_trait::async_trait;
 use crate::providers::models::{
     CatalogItem, EpisodeRef, Media, MediaType, ProviderError, ProviderKind, Quality, Release,
     StreamUrl,
 };
 use crate::providers::{Provider, ProviderCapabilities, ReleaseProvider};
+use async_trait::async_trait;
 
 impl From<FourKHdHubError> for ProviderError {
     fn from(err: FourKHdHubError) -> Self {

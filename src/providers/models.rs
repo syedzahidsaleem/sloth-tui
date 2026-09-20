@@ -117,7 +117,9 @@ pub enum MediaType {
 }
 
 /// Available stream resolution and quality tiers.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub enum Quality {
     /// 4K Ultra High Definition (2160p).
     UHD4K,
@@ -723,7 +725,13 @@ impl From<MediaDetails> for Media {
         let episodes_count = if details.seasons.is_empty() {
             None
         } else {
-            Some(details.seasons.iter().map(|s| s.episodes.len() as u32).sum())
+            Some(
+                details
+                    .seasons
+                    .iter()
+                    .map(|s| s.episodes.len() as u32)
+                    .sum(),
+            )
         };
         Self {
             id: details.id.value,

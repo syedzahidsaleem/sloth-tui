@@ -81,8 +81,8 @@ fn test_settings_general_has_rows_with_discord_and_notifications() {
 
 #[test]
 fn test_details_screen_renders_without_crash() {
-    use ratatui::backend::TestBackend;
     use ratatui::Terminal;
+    use ratatui::backend::TestBackend;
 
     let backend = TestBackend::new(100, 30);
     let mut terminal = Terminal::new(backend).unwrap();

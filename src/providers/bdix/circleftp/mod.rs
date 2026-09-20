@@ -5,12 +5,12 @@ pub mod parser;
 
 pub use client::{CircleFtpClient, CircleFtpError};
 
-use async_trait::async_trait;
 use crate::providers::models::{
     CatalogItem, EpisodeRef, Media, MediaType, ProviderError, ProviderKind, Quality, Release,
     StreamUrl,
 };
 use crate::providers::{Provider, ProviderCapabilities, ReleaseProvider};
+use async_trait::async_trait;
 
 impl From<CircleFtpError> for ProviderError {
     fn from(err: CircleFtpError) -> Self {

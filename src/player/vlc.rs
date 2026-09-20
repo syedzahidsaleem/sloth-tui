@@ -1,8 +1,8 @@
 //! VLC media player integration.
 
+use crate::SlothError;
 use crate::config::PlayerConfig;
 use crate::providers::models::StreamUrl;
-use crate::SlothError;
 
 /// Controller for an active VLC player process.
 pub struct VlcPlayer {

@@ -312,11 +312,7 @@ impl Provider for HiAnimeProvider {
         Ok(stream_urls)
     }
 
-    async fn episodes(
-        &self,
-        media: &Media,
-        season: u32,
-    ) -> Result<Vec<EpisodeRef>, ProviderError> {
+    async fn episodes(&self, media: &Media, season: u32) -> Result<Vec<EpisodeRef>, ProviderError> {
         let ep_list = self.fetch_episodes_data(&media.id).await?;
         let episodes = ep_list
             .into_iter()

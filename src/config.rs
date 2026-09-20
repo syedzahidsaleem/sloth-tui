@@ -131,7 +131,9 @@ pub struct ProvidersConfig {
 
 /// Returns configuration directory for the application.
 pub fn config_dir() -> Option<PathBuf> {
-    if let Ok(dir) = std::env::var("SLOTH_CONFIG_DIR").or_else(|_| std::env::var("MOVIEBOX_CONFIG_DIR")) {
+    if let Ok(dir) =
+        std::env::var("SLOTH_CONFIG_DIR").or_else(|_| std::env::var("MOVIEBOX_CONFIG_DIR"))
+    {
         return Some(PathBuf::from(dir));
     }
     if let Some(dir) = dirs::config_dir() {
@@ -162,7 +164,8 @@ pub fn config_dir() -> Option<PathBuf> {
 
 /// Returns persistent data directory for history, favorites, and databases.
 pub fn data_dir() -> Option<PathBuf> {
-    if let Ok(dir) = std::env::var("SLOTH_DATA_DIR").or_else(|_| std::env::var("MOVIEBOX_DATA_DIR")) {
+    if let Ok(dir) = std::env::var("SLOTH_DATA_DIR").or_else(|_| std::env::var("MOVIEBOX_DATA_DIR"))
+    {
         return Some(PathBuf::from(dir));
     }
     if let Some(dir) = dirs::data_dir() {
@@ -193,7 +196,9 @@ pub fn data_dir() -> Option<PathBuf> {
 
 /// Returns cache directory for temporary thumbnails, manifests, and catalogs.
 pub fn cache_dir() -> PathBuf {
-    if let Ok(dir) = std::env::var("SLOTH_CACHE_DIR").or_else(|_| std::env::var("MOVIEBOX_CACHE_DIR")) {
+    if let Ok(dir) =
+        std::env::var("SLOTH_CACHE_DIR").or_else(|_| std::env::var("MOVIEBOX_CACHE_DIR"))
+    {
         return PathBuf::from(dir);
     }
     if let Some(dir) = dirs::cache_dir() {
@@ -319,7 +324,10 @@ pub fn is_player_in_path(name: &str) -> bool {
 /// Returns (player_name, optional_warning_message).
 pub fn resolve_player(config: &PlayerConfig) -> (String, Option<String>) {
     let detected = detect_available_players();
-    if detected.iter().any(|p| p.eq_ignore_ascii_case(&config.preferred)) {
+    if detected
+        .iter()
+        .any(|p| p.eq_ignore_ascii_case(&config.preferred))
+    {
         return (config.preferred.clone(), None);
     }
     if let Some(first) = detected.first() {
@@ -329,7 +337,8 @@ pub fn resolve_player(config: &PlayerConfig) -> (String, Option<String>) {
         );
         return (first.clone(), Some(warning));
     }
-    let warning = "No video player (mpv, vlc, iina, celluloid) found in PATH. Playback may fail.".to_string();
+    let warning =
+        "No video player (mpv, vlc, iina, celluloid) found in PATH. Playback may fail.".to_string();
     (config.preferred.clone(), Some(warning))
 }
 

@@ -223,7 +223,9 @@ impl App {
             handle.spawn(async move {
                 let db_path = crate::config::db_path();
                 if let Ok(pool) = crate::db::open(&db_path).await {
-                    if let Ok(Some(client)) = crate::tracking::AniListClient::authenticate(&pool).await {
+                    if let Ok(Some(client)) =
+                        crate::tracking::AniListClient::authenticate(&pool).await
+                    {
                         let username = client.get_authenticated_user().await.ok().flatten();
                         let _ = anilist_tx.send(crate::tui::action::Action::AniListAuthStatus {
                             authenticated: true,

@@ -1221,7 +1221,11 @@ fn home_bottom_bar_spans(
     };
 
     let sep = if width < 70 { "  " } else { "   " };
-    let jk_label = if state.basic_terminal { "j/k" } else { "j↓ k↑" };
+    let jk_label = if state.basic_terminal {
+        "j/k"
+    } else {
+        "j↓ k↑"
+    };
 
     vec![
         Span::styled("/", shortcut_style),
@@ -1322,8 +1326,14 @@ pub fn render_placeholder_tab(
     }
     let (icon, desc) = match tab {
         Tab::Anime => ("⛩", "Anime streaming via HiAnime with Sub/Dub toggle"),
-        Tab::Sports => ("⚽", "Live Sports streaming across Football, Cricket, Basketball & more"),
-        Tab::F1 => ("🏎", "Formula 1 live weekend streaming, sessions & race countdown"),
+        Tab::Sports => (
+            "⚽",
+            "Live Sports streaming across Football, Cricket, Basketball & more",
+        ),
+        Tab::F1 => (
+            "🏎",
+            "Formula 1 live weekend streaming, sessions & race countdown",
+        ),
         _ => ("●", "Coming soon in the next update"),
     };
 
@@ -1358,13 +1368,21 @@ pub fn render_placeholder_tab(
         ]),
         Line::from(""),
         Line::from(vec![
-            Span::styled("● This mode is coming soon in the next update. ", theme.text_dim),
-            Span::styled("Press [1] to switch back to Movies.", Style::default().fg(theme.tab_active)),
+            Span::styled(
+                "● This mode is coming soon in the next update. ",
+                theme.text_dim,
+            ),
+            Span::styled(
+                "Press [1] to switch back to Movies.",
+                Style::default().fg(theme.tab_active),
+            ),
         ]),
     ];
 
     frame.render_widget(
-        Paragraph::new(lines).block(block).alignment(Alignment::Center),
+        Paragraph::new(lines)
+            .block(block)
+            .alignment(Alignment::Center),
         card_area,
     );
 }

@@ -43,13 +43,19 @@ impl App {
                         None => self.state.sports_tab.matches.is_empty(),
                     };
                     if should_refresh && !self.state.is_loading {
-                        crate::tui::app::sports::refresh_live_data(&mut self.state, &self.action_sender);
+                        crate::tui::app::sports::refresh_live_data(
+                            &mut self.state,
+                            &self.action_sender,
+                        );
                     }
                 }
 
                 if self.state.active_tab == crate::tui::state::Tab::F1 {
                     if self.state.f1_tab.calendar.is_empty() && !self.state.f1_tab.loading {
-                        crate::tui::app::f1::handle_f1_calendar_load(&mut self.state, &self.action_sender);
+                        crate::tui::app::f1::handle_f1_calendar_load(
+                            &mut self.state,
+                            &self.action_sender,
+                        );
                     }
                     crate::tui::app::f1::update_countdown(&mut self.state);
                 }
@@ -320,8 +326,7 @@ impl App {
                             if let Ok(Some(client)) =
                                 crate::tracking::AniListClient::authenticate(&pool).await
                             {
-                                let username =
-                                    client.get_authenticated_user().await.ok().flatten();
+                                let username = client.get_authenticated_user().await.ok().flatten();
                                 let _ = tx.send(Action::AniListAuthStatus {
                                     authenticated: true,
                                     username,

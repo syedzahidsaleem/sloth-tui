@@ -8,9 +8,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use serde::Deserialize;
 
-use crate::providers::models::{
-    EpisodeRef, Media, MediaType, ProviderError, Quality, StreamUrl,
-};
+use crate::providers::models::{EpisodeRef, Media, MediaType, ProviderError, Quality, StreamUrl};
 use crate::providers::sports::models::{LiveMatch, MatchStream};
 use crate::providers::{Provider, ProviderCapabilities};
 
@@ -138,13 +136,19 @@ impl StreamedProvider {
     }
 
     /// Fetches sporting events filtered by sport category, or all events if sport is "all".
-    pub async fn fetch_matches_by_sport(&self, sport: &str) -> Result<Vec<LiveMatch>, ProviderError> {
+    pub async fn fetch_matches_by_sport(
+        &self,
+        sport: &str,
+    ) -> Result<Vec<LiveMatch>, ProviderError> {
         let sport_normalized = sport.trim().to_lowercase();
         if sport_normalized == "live" {
             return self.fetch_live_matches().await;
         }
 
-        if sport_normalized.is_empty() || sport_normalized == "all" || sport_normalized == "all-sports" {
+        if sport_normalized.is_empty()
+            || sport_normalized == "all"
+            || sport_normalized == "all-sports"
+        {
             return self.fetch_all_sports_matches().await;
         }
 
@@ -270,9 +274,9 @@ impl StreamedProvider {
                 };
 
                 MatchStream {
-                    id: item
-                        .id
-                        .unwrap_or_else(|| format!("stream-{}", item.stream_no.unwrap_or((idx + 1) as u32))),
+                    id: item.id.unwrap_or_else(|| {
+                        format!("stream-{}", item.stream_no.unwrap_or((idx + 1) as u32))
+                    }),
                     hd_url,
                     sd_url,
                     embed_url,
@@ -540,9 +544,9 @@ impl ApiMatchItem {
             .into_iter()
             .enumerate()
             .map(|(idx, s)| MatchStream {
-                id: s
-                    .id
-                    .unwrap_or_else(|| format!("stream-{}", s.stream_no.unwrap_or((idx + 1) as u32))),
+                id: s.id.unwrap_or_else(|| {
+                    format!("stream-{}", s.stream_no.unwrap_or((idx + 1) as u32))
+                }),
                 hd_url: None,
                 sd_url: None,
                 embed_url: None,

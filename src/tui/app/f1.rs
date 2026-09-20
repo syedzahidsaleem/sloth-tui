@@ -2,17 +2,14 @@
 
 use tokio::sync::mpsc;
 
-use crate::providers::f1::calendar::{fetch_calendar, next_session, time_until, F1Session};
+use crate::providers::f1::calendar::{F1Session, fetch_calendar, next_session, time_until};
 use crate::providers::f1::streams::fetch_f1_streams;
 use crate::providers::models::{PlaybackSource, ProviderKind};
 use crate::tui::action::Action;
 use crate::tui::state::AppState;
 
 /// Fetches the F1 calendar (season 2026) asynchronously and dispatches `Action::F1CalendarReceived`.
-pub fn handle_f1_calendar_load(
-    state: &mut AppState,
-    tx: &mpsc::UnboundedSender<Action>,
-) {
+pub fn handle_f1_calendar_load(state: &mut AppState, tx: &mpsc::UnboundedSender<Action>) {
     state.f1_tab.loading = true;
     let tx = tx.clone();
 

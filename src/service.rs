@@ -100,12 +100,8 @@ impl MovieBoxService {
                 })?;
                 fourk.search_catalog(query, page).await
             }
-            ProviderKind::BdixCircleFtp => {
-                self.circleftp_client.search_catalog(query, page).await
-            }
-            ProviderKind::BdixDhakaFlix => {
-                self.dhakaflix_client.search_catalog(query, page).await
-            }
+            ProviderKind::BdixCircleFtp => self.circleftp_client.search_catalog(query, page).await,
+            ProviderKind::BdixDhakaFlix => self.dhakaflix_client.search_catalog(query, page).await,
             ProviderKind::Addons => self.addon_client.search_catalog(query, page).await,
         }
     }
@@ -465,7 +461,10 @@ fn is_termux_environment() -> bool {
 pub fn resolve_subtitle_dir() -> PathBuf {
     if is_termux_environment() {
         if let Some(home) = dirs::home_dir() {
-            let storage = home.join(format!("storage/downloads/{}_subs", crate::config::APP_NAME));
+            let storage = home.join(format!(
+                "storage/downloads/{}_subs",
+                crate::config::APP_NAME
+            ));
             if home.join("storage/downloads").exists() {
                 let _ = std::fs::create_dir_all(&storage);
                 return storage;

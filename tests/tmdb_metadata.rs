@@ -1,6 +1,8 @@
 use sloth_tui::metadata::tmdb::{TmdbClient, TmdbMovie, TmdbTv};
-use sloth_tui::providers::models::{CastMember, ExternalIds, Media, MediaDetails, MediaType, ProviderMediaId};
 use sloth_tui::providers::models::ProviderKind;
+use sloth_tui::providers::models::{
+    CastMember, ExternalIds, Media, MediaDetails, MediaType, ProviderMediaId,
+};
 use sloth_tui::tui::screens::details;
 use sloth_tui::tui::state::AppState;
 use sloth_tui::tui::theme::Theme;
@@ -39,8 +41,20 @@ async fn test_graceful_skip_without_key() {
     let client = TmdbClient::new(None);
     assert_eq!(client.api_key(), None);
 
-    assert!(client.search_movie("Inception", Some(2010)).await.unwrap().is_none());
-    assert!(client.search_tv("Breaking Bad", Some(2008)).await.unwrap().is_none());
+    assert!(
+        client
+            .search_movie("Inception", Some(2010))
+            .await
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        client
+            .search_tv("Breaking Bad", Some(2008))
+            .await
+            .unwrap()
+            .is_none()
+    );
     assert!(client.movie_details(27205).await.unwrap().is_none());
     assert!(client.tv_details(1396).await.unwrap().is_none());
     assert!(client.tv_season_episodes(1396, 1).await.unwrap().is_empty());
@@ -92,7 +106,10 @@ fn test_tmdb_movie_and_tv_deserialization() {
     assert_eq!(movie.id, 27205);
     assert_eq!(movie.title.as_deref(), Some("Inception"));
     assert_eq!(movie.genres.as_ref().unwrap().len(), 2);
-    assert_eq!(movie.credits.as_ref().unwrap().cast.as_ref().unwrap().len(), 2);
+    assert_eq!(
+        movie.credits.as_ref().unwrap().cast.as_ref().unwrap().len(),
+        2
+    );
 
     let tv_json = r#"{
         "id": 1396,
@@ -128,9 +145,15 @@ async fn test_sqlite_media_upsert() {
         media_type: MediaType::Movie,
         year: Some(2014),
         overview: Some("A team of explorers travel through a wormhole in space...".to_string()),
-        poster_url: Some("https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg".to_string()),
+        poster_url: Some(
+            "https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg".to_string(),
+        ),
         backdrop_url: None,
-        genres: vec!["Adventure".to_string(), "Drama".to_string(), "Science Fiction".to_string()],
+        genres: vec![
+            "Adventure".to_string(),
+            "Drama".to_string(),
+            "Science Fiction".to_string(),
+        ],
         rating: Some(8.6),
         duration_secs: Some(169.0 * 60.0),
         seasons_count: None,
@@ -143,23 +166,20 @@ async fn test_sqlite_media_upsert() {
             anilist: None,
             tvdb: None,
         },
-        cast: vec![
-            CastMember {
-                name: "Matthew McConaughey".to_string(),
-                character: Some("Joseph Cooper".to_string()),
-            },
-        ],
+        cast: vec![CastMember {
+            name: "Matthew McConaughey".to_string(),
+            character: Some("Joseph Cooper".to_string()),
+        }],
     };
 
     let result = TmdbClient::upsert_media(&pool, &media).await;
     assert!(result.is_ok());
 
-    let (title, tmdb_id, rating): (String, Option<i64>, Option<f64>) = sqlx::query_as(
-        "SELECT title, tmdb_id, rating FROM media WHERE id = 'moviebox:9999'",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Row should be present in media table");
+    let (title, tmdb_id, rating): (String, Option<i64>, Option<f64>) =
+        sqlx::query_as("SELECT title, tmdb_id, rating FROM media WHERE id = 'moviebox:9999'")
+            .fetch_one(&pool)
+            .await
+            .expect("Row should be present in media table");
 
     assert_eq!(title, "Interstellar");
     assert_eq!(tmdb_id, Some(157336));
@@ -247,15 +267,30 @@ fn test_details_screen_shows_tmdb_rating_and_attribution() {
         .join("\n");
 
     // Check TMDB rating is displayed
-    assert!(rendered.contains("TMDB"), "Details screen should display TMDB label");
-    assert!(rendered.contains("8.6"), "Details screen should display TMDB rating 8.6");
+    assert!(
+        rendered.contains("TMDB"),
+        "Details screen should display TMDB label"
+    );
+    assert!(
+        rendered.contains("8.6"),
+        "Details screen should display TMDB rating 8.6"
+    );
 
     // Check genres are rendered as badges
-    assert!(rendered.contains("[Sci-Fi]") || rendered.contains("Sci-Fi"), "Genres should be displayed");
+    assert!(
+        rendered.contains("[Sci-Fi]") || rendered.contains("Sci-Fi"),
+        "Genres should be displayed"
+    );
 
     // Check cast is rendered
-    assert!(rendered.contains("Matthew McConaughey"), "Cast member should be displayed");
+    assert!(
+        rendered.contains("Matthew McConaughey"),
+        "Cast member should be displayed"
+    );
 
     // Check TMDB attribution in bottom area
-    assert!(rendered.contains("Powered by TMDB"), "TMDB attribution must be displayed");
+    assert!(
+        rendered.contains("Powered by TMDB"),
+        "TMDB attribution must be displayed"
+    );
 }

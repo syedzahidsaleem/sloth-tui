@@ -63,7 +63,9 @@ impl CountdownWidget {
         };
 
         if area.height == 1 {
-            let p = Paragraph::new(formatted).style(style).alignment(Alignment::Center);
+            let p = Paragraph::new(formatted)
+                .style(style)
+                .alignment(Alignment::Center);
             p.render(area, buf);
             return;
         }
@@ -83,7 +85,9 @@ impl CountdownWidget {
                 ratatui::text::Line::from(ratatui::text::Span::styled(formatted, style)),
             ]
         } else {
-            vec![ratatui::text::Line::from(ratatui::text::Span::styled(formatted, style))]
+            vec![ratatui::text::Line::from(ratatui::text::Span::styled(
+                formatted, style,
+            ))]
         };
 
         let p = Paragraph::new(lines).alignment(Alignment::Center);

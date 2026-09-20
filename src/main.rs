@@ -76,7 +76,9 @@ async fn main() -> std::io::Result<()> {
     }
     if args.iter().any(|arg| arg == "--help" || arg == "-h") {
         println!("sloth-tui {}", env!("CARGO_PKG_VERSION"));
-        println!("Terminal interface for movies, anime, sports, F1, and live TV — zero cost, always fast.\n");
+        println!(
+            "Terminal interface for movies, anime, sports, F1, and live TV — zero cost, always fast.\n"
+        );
         println!("USAGE:");
         println!("    sloth-tui [OPTIONS]\n");
         println!("OPTIONS:");

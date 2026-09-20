@@ -43,9 +43,10 @@ pub async fn sync_anilist(
 
     if let Ok(pool) = crate::db::open(&crate::config::db_path()).await {
         if let Ok(Some(client)) = AniListClient::authenticate(&pool).await {
-            let anilist_id = media_id.parse::<u32>().ok().or_else(|| {
-                media_id.split('-').find_map(|s| s.parse::<u32>().ok())
-            });
+            let anilist_id = media_id
+                .parse::<u32>()
+                .ok()
+                .or_else(|| media_id.split('-').find_map(|s| s.parse::<u32>().ok()));
 
             if let Some(id) = anilist_id {
                 if let Err(err) = client
