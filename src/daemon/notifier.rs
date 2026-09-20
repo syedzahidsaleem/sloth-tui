@@ -264,10 +264,30 @@ pub async fn run_notifier(pool: SqlitePool, config: NotificationsConfig) {
 mod tests {
     use super::*;
     use crate::providers::f1::calendar::{save_calendar_to_cache, F1Session, F1SessionSlot};
+    use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+
+    async fn setup_test_db() -> SqlitePool {
+        let options = SqliteConnectOptions::new()
+            .filename(":memory:")
+            .create_if_missing(true);
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(options)
+            .await
+            .expect("Failed to connect to in-memory sqlite db");
+
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .expect("Failed to run migrations");
+
+        pool
+    }
 
     #[tokio::test]
     async fn test_f1_notification_sent_and_deduplicated() {
-        let pool = crate::db::open(std::path::Path::new(":memory:")).await.unwrap();
+        let pool = setup_test_db().await;
 
         let now = Utc::now();
         let session = F1Session {
@@ -305,7 +325,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_purge_old_notifications() {
-        let pool = crate::db::open(std::path::Path::new(":memory:")).await.unwrap();
+        let pool = setup_test_db().await;
 
         sqlx::query(
             "INSERT INTO notifications_sent (kind, reference_id, sent_at) VALUES ('race_start', 'old_race', unixepoch() - 800000)"
