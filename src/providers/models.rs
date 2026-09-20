@@ -337,6 +337,8 @@ pub struct ExternalIds {
     pub anilist: Option<u32>,
     /// TheTVDB numeric ID.
     pub tvdb: Option<u32>,
+    /// Trakt.tv identifier or slug.
+    pub trakt: Option<String>,
 }
 
 /// Credited actor or creator in a media production.
