@@ -662,7 +662,8 @@ impl TraktClient {
         episode: Option<u32>,
     ) -> Result<(), SlothError> {
         let is_movie = media.media_type == MediaType::Movie;
-        let kind_str = if is_movie { "movie" } else { "episode" };
+        let entry_kind = if is_movie { "movie" } else { "episode" };
+        let media_kind = if is_movie { "movie" } else { "series" };
 
         let trakt_id = if is_movie {
             format!("movie:{}", media.id)
@@ -691,7 +692,7 @@ impl TraktClient {
             )
             .bind(&media.id)
             .bind(&media.title)
-            .bind(kind_str)
+            .bind(media_kind)
             .execute(pool)
             .await;
 
@@ -708,7 +709,7 @@ impl TraktClient {
             )
             .bind(&trakt_id)
             .bind(&media.id)
-            .bind(kind_str)
+            .bind(entry_kind)
             .bind(dirty)
             .execute(pool)
             .await;
