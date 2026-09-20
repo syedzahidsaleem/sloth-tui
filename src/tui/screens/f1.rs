@@ -234,17 +234,19 @@ fn render_calendar_table(f: &mut Frame, area: Rect, state: &AppState, theme: &Th
 
 /// Renders contextual shortcuts at the bottom of the screen.
 fn render_footer(f: &mut Frame, area: Rect, theme: &Theme) {
+    let sep = "   ";
     let hints = Line::from(vec![
-        Span::styled(" j/k / ↑↓", theme.accent.add_modifier(Modifier::BOLD)),
-        Span::styled(" Navigate  ", theme.text_dim),
         Span::styled("Enter", theme.accent.add_modifier(Modifier::BOLD)),
-        Span::styled(" Play/Sessions  ", theme.text_dim),
+        Span::styled(" Sessions", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
         Span::styled("w", theme.accent.add_modifier(Modifier::BOLD)),
-        Span::styled(" Watch Live  ", theme.text_dim),
+        Span::styled(" Watch", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
         Span::styled("r", theme.accent.add_modifier(Modifier::BOLD)),
-        Span::styled(" Refresh  ", theme.text_dim),
-        Span::styled("?", theme.accent.add_modifier(Modifier::BOLD)),
-        Span::styled(" Help", theme.text_dim),
+        Span::styled(" Refresh", theme.text_dim),
+        Span::styled(sep, theme.overlay1),
+        Span::styled("q", theme.accent.add_modifier(Modifier::BOLD)),
+        Span::styled(" Quit", theme.text_dim),
     ]);
 
     let p = Paragraph::new(hints).style(Style::default().bg(theme.bg));
