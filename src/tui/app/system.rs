@@ -796,7 +796,7 @@ impl App {
                                         {
                                             match status {
                                                 crate::tracking::trakt::DeviceTokenPollStatus::Success => {
-                                                    if let (Some(token), Some(ref pool)) =
+                                                    if let (Some(token), Some(pool)) =
                                                         (token_opt, &pool_opt)
                                                     {
                                                         let _ = crate::tracking::trakt::TraktClient::store_tokens(
