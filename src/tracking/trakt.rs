@@ -241,7 +241,7 @@ impl TraktClient {
         }
 
         // Token expired; try refreshing if refresh_token and secret are available
-        if let (Some(ref refresh), Some(secret)) = (&refresh_token, client_secret) {
+        if let (Some(refresh), Some(secret)) = (&refresh_token, client_secret) {
             let client = reqwest::Client::new();
             let body = serde_json::json!({
                 "refresh_token": refresh,
@@ -332,7 +332,7 @@ impl TraktClient {
             .json(&body)
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e)))?;
+            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -372,7 +372,7 @@ impl TraktClient {
             .json(&body)
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e)))?;
+            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
 
         match resp.status().as_u16() {
             200 => {
@@ -547,7 +547,7 @@ impl TraktClient {
             .json(&payload)
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e)))?;
+            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -578,7 +578,7 @@ impl TraktClient {
         let resp = req
             .send()
             .await
-            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e)))?;
+            .map_err(|e| SlothError::Provider(crate::providers::models::ProviderError::Network(e.to_string())))?;
 
         if !resp.status().is_success() {
             let status = resp.status();
@@ -661,7 +661,7 @@ impl TraktClient {
         season: Option<u32>,
         episode: Option<u32>,
     ) -> Result<(), SlothError> {
-        let is_movie = media.kind == MediaType::Movie;
+        let is_movie = media.media_type == MediaType::Movie;
         let kind_str = if is_movie { "movie" } else { "episode" };
 
         let trakt_id = if is_movie {
@@ -707,7 +707,9 @@ impl TraktClient {
 
         if !success {
             return Err(SlothError::Provider(
-                crate::providers::models::ProviderError::Unavailable,
+                crate::providers::models::ProviderError::Unavailable(
+                    "Trakt.tv API request failed".into(),
+                ),
             ));
         }
 
@@ -770,7 +772,7 @@ impl TraktClient {
     ) -> serde_json::Value {
         let progress_clamped = progress.clamp(0.0, 100.0);
 
-        if media.kind == MediaType::Movie {
+        if media.media_type == MediaType::Movie {
             serde_json::json!({
                 "movie": {
                     "title": media.title,
@@ -810,7 +812,7 @@ impl TraktClient {
     ) -> serde_json::Value {
         let now_iso = chrono::Utc::now().to_rfc3339();
 
-        if media.kind == MediaType::Movie {
+        if media.media_type == MediaType::Movie {
             serde_json::json!({
                 "movies": [{
                     "title": media.title,
