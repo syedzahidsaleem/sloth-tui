@@ -7,9 +7,9 @@ pub mod trakt;
 pub use anilist_sync::{AniListClient, AniListEntry};
 pub use discord_rpc::DiscordRpc;
 pub use trakt::{
-    DeviceCodeResponse, DeviceTokenPollStatus, DeviceTokenResponse, ScrobbleResponse, TraktClient,
-    TraktEntry, TraktEpisode, TraktHistoryItem, TraktIds, TraktMovie, TraktShow,
-    DEFAULT_TRAKT_CLIENT_ID, TRAKT_API_URL, TRAKT_API_VERSION,
+    DEFAULT_TRAKT_CLIENT_ID, DeviceCodeResponse, DeviceTokenPollStatus, DeviceTokenResponse,
+    ScrobbleResponse, TRAKT_API_URL, TRAKT_API_VERSION, TraktClient, TraktEntry, TraktEpisode,
+    TraktHistoryItem, TraktIds, TraktMovie, TraktShow,
 };
 
 use crate::SlothError;
@@ -46,7 +46,9 @@ pub async fn sync_trakt(
             .ok()
             .flatten();
 
-            let duration = history_info.as_ref().and_then(|r| r.get::<Option<f64>, _>("duration"));
+            let duration = history_info
+                .as_ref()
+                .and_then(|r| r.get::<Option<f64>, _>("duration"));
             let completed_flag = history_info
                 .as_ref()
                 .map(|r| r.get::<i64, _>("completed") == 1)
@@ -58,11 +60,17 @@ pub async fn sync_trakt(
             let kind_str = history_info
                 .as_ref()
                 .and_then(|r| r.get::<Option<String>, _>("kind"))
-                .unwrap_or_else(|| if is_movie { "movie".to_string() } else { "series".to_string() });
+                .unwrap_or_else(|| {
+                    if is_movie {
+                        "movie".to_string()
+                    } else {
+                        "series".to_string()
+                    }
+                });
 
             let is_movie_resolved = kind_str == "movie" || is_movie;
             let progress_pct = match duration {
-                Some(d) if d > 0.0 => (progress_secs / d) * 100.0,
+                Some(d) if d > 0.0 => ((progress_secs / d) * 100.0).clamp(0.0, 100.0),
                 _ => 0.0,
             };
             let is_completed = completed_flag || (duration.is_some() && progress_pct >= 85.0);
@@ -99,16 +107,22 @@ pub async fn sync_trakt(
                 cast: vec![],
             };
 
-            let s_opt = if is_movie_resolved { None } else { Some(season) };
-            let e_opt = if is_movie_resolved { None } else { Some(episode) };
+            let s_opt = if is_movie_resolved {
+                None
+            } else {
+                Some(season)
+            };
+            let e_opt = if is_movie_resolved {
+                None
+            } else {
+                Some(episode)
+            };
 
             if is_completed {
-                let _ = client
-                    .mark_watched(Some(&pool), &media, s_opt, e_opt)
-                    .await;
+                let _ = client.mark_watched(Some(&pool), &media, s_opt, e_opt).await;
             } else if progress_pct > 0.0 {
                 let _ = client
-                    .scrobble_pause(&media, s_opt, e_opt, progress_pct)
+                    .scrobble_stop(&media, s_opt, e_opt, progress_pct)
                     .await;
             }
 
