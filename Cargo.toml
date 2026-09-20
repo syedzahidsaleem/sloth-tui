@@ -5,6 +5,12 @@ edition = "2024"
 rust-version = "1.90.0"
 description = "Terminal interface for movies, anime, sports, F1, and live TV — zero cost, always fast."
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/syedzahidsaleem/sloth-tui.git"
+homepage = "https://github.com/syedzahidsaleem/sloth-tui"
+readme = "README.md"
+categories = ["multimedia::video", "command-line-utilities"]
+keywords = ["tui", "streaming", "movies", "anime", "f1"]
+
 [features]
 default = ["notifications", "discord"]
 discord = ["dep:discord-presence"]
