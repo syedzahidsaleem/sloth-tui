@@ -11,12 +11,14 @@ use crate::config::PlayerConfig;
 use crate::providers::models::StreamUrl;
 
 /// Deserialized VLC HTTP interface status response (`/requests/status.json`).
-#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct VlcStatus {
     /// Current playback position in seconds.
-    pub time: Option<u64>,
+    #[serde(default)]
+    pub time: f64,
     /// Total stream duration in seconds.
-    pub length: Option<u64>,
+    #[serde(default)]
+    pub length: f64,
     /// Playback state ("playing", "paused", "stopped").
     pub state: Option<String>,
 }
@@ -29,23 +31,19 @@ impl VlcStatus {
 
     /// Extracts current position in seconds if playing or paused and time > 0.
     pub fn position(&self) -> Option<f64> {
-        if self.is_stopped() {
-            return None;
-        }
-        match self.time {
-            Some(t) if t > 0 => Some(t as f64),
-            _ => None,
+        if self.is_stopped() || self.time <= 0.0 {
+            None
+        } else {
+            Some(self.time)
         }
     }
 
     /// Extracts total stream duration in seconds.
     pub fn duration(&self) -> Option<f64> {
-        if self.is_stopped() {
-            return None;
-        }
-        match self.length {
-            Some(l) if l > 0 => Some(l as f64),
-            _ => None,
+        if self.is_stopped() || self.length <= 0.0 {
+            None
+        } else {
+            Some(self.length)
         }
     }
 
@@ -125,8 +123,8 @@ pub fn build_vlc_args(
     ];
 
     if let Some(pos) = resume_pos {
-        if pos > 5.0 {
-            args.push(format!("--start-time={pos}"));
+        if pos > 10.0 {
+            args.push(format!("--start-time={}", pos as u64));
         }
     }
 
@@ -235,13 +233,17 @@ impl VlcPlayer {
             .unwrap_or(false)
     }
 
+    /// Polls playback position and duration once.
+    pub async fn poll_position(&self) -> (Option<f64>, Option<f64>) {
+        poll_position(self.http_port, &self.http_password).await
+    }
+
     /// Waits for the VLC process to exit while polling playback position and duration.
     /// Returns `(Option<position>, Option<duration>)`.
     pub async fn wait_for_exit(&mut self) -> (Option<f64>, Option<f64>) {
         let last_state = Arc::new(Mutex::new((None::<f64>, None::<f64>)));
 
         let state_clone = Arc::clone(&last_state);
-        let client = self.http_client.clone();
         let port = self.http_port;
         let password = self.http_password.clone();
 
@@ -249,14 +251,13 @@ impl VlcPlayer {
             let mut interval = tokio::time::interval(Duration::from_secs(2));
             loop {
                 interval.tick().await;
-                if let Some(status) = fetch_vlc_status(&client, port, &password).await {
-                    let mut lock = state_clone.lock();
-                    if let Some(pos) = status.position() {
-                        lock.0 = Some(pos);
-                    }
-                    if let Some(dur) = status.duration() {
-                        lock.1 = Some(dur);
-                    }
+                let (pos_opt, dur_opt) = poll_position(port, &password).await;
+                let mut lock = state_clone.lock();
+                if let Some(pos) = pos_opt {
+                    lock.0 = Some(pos);
+                }
+                if let Some(dur) = dur_opt {
+                    lock.1 = Some(dur);
                 }
             }
         });
@@ -265,18 +266,35 @@ impl VlcPlayer {
         poll_handle.abort();
 
         // Final poll attempt after process exit
-        if let Some(status) = self.fetch_status().await {
-            let mut lock = last_state.lock();
-            if let Some(pos) = status.position() {
-                lock.0 = Some(pos);
-            }
-            if let Some(dur) = status.duration() {
-                lock.1 = Some(dur);
-            }
+        let (pos_opt, dur_opt) = self.poll_position().await;
+        let mut lock = last_state.lock();
+        if let Some(pos) = pos_opt {
+            lock.0 = Some(pos);
+        }
+        if let Some(dur) = dur_opt {
+            lock.1 = Some(dur);
         }
 
         let lock = last_state.lock();
         *lock
+    }
+}
+
+/// Polls the VLC HTTP endpoint once for (position, duration).
+/// Returns `(None, None)` if the endpoint fails, is stopped, or times out.
+pub async fn poll_position(port: u16, password: &str) -> (Option<f64>, Option<f64>) {
+    let client = match reqwest::Client::builder()
+        .timeout(Duration::from_millis(1500))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return (None, None),
+    };
+
+    if let Some(status) = fetch_vlc_status(&client, port, password).await {
+        (status.position(), status.duration())
+    } else {
+        (None, None)
     }
 }
 
