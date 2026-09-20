@@ -10,7 +10,7 @@ use ratatui::{
 
 use crate::tui::{
     overlay,
-    state::{AppState, SettingsCategory, settings_player_label},
+    state::{AppState, SettingsCategory},
     theme::Theme,
     widgets::ModalFrame,
 };
@@ -373,19 +373,33 @@ fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, them
     }
     if let Some(&row_area) = row_rects.get(1) {
         let is_selected = state.settings_selected_row == 1;
-        let player_name = if let Some(key) = state
+        let detected = crate::config::detect_player();
+        let detected_backend = detected.map(|p| p.label()).unwrap_or("None detected");
+
+        let configured_backend = state
             .default_player
             .as_deref()
-            .filter(|k| !k.is_empty() && *k != "auto")
-        {
-            settings_player_label(Some(key))
-        } else if let Some(first) = state.available_players.first() {
-            settings_player_label(Some(first.config_key()))
-        } else {
-            settings_player_label(None)
+            .map(|k| match k.to_ascii_lowercase().as_str() {
+                "mpv" => crate::config::PlayerBackend::Mpv,
+                "vlc" => crate::config::PlayerBackend::Vlc,
+                "iina" => crate::config::PlayerBackend::Iina,
+                _ => crate::config::PlayerBackend::Auto,
+            })
+            .unwrap_or(crate::config::PlayerBackend::Auto);
+
+        let value_label = match configured_backend {
+            crate::config::PlayerBackend::Auto => {
+                if detected.is_none() {
+                    "[None detected]".to_string()
+                } else {
+                    "[Auto ▼]".to_string()
+                }
+            }
+            other => format!("[{} ▼]", other.label()),
         };
-        let value_spans = vec![Span::styled(
-            player_name,
+
+        let mut value_spans = vec![Span::styled(
+            value_label,
             if has_active_popup {
                 theme.muted
             } else if state.basic_terminal {
@@ -394,13 +408,22 @@ fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, them
                 theme.accent.add_modifier(Modifier::BOLD)
             },
         )];
+
+        if detected.is_some() {
+            value_spans.push(Span::raw(" "));
+            value_spans.push(Span::styled(
+                format!("Active Player {detected_backend} ← detected"),
+                theme.text_dim,
+            ));
+        }
+
         render_row(
             frame,
             row_area,
             SettingRow {
                 is_selected,
                 has_active_popup,
-                label: "Default Media Player",
+                label: "Video Player",
                 value_spans,
             },
             theme,
@@ -544,6 +567,46 @@ fn render_general_settings(frame: &mut Frame, area: Rect, state: &AppState, them
             theme,
             state.basic_terminal,
         );
+    }
+
+    let detected = crate::config::detect_player();
+    let start_y = if let Some(last_row) = row_rects.last() {
+        last_row.bottom().saturating_add(1)
+    } else {
+        area.y.saturating_add(7)
+    };
+
+    if start_y < area.bottom() {
+        let info_height = area.bottom().saturating_sub(start_y);
+        let info_area = Rect {
+            x: area.x.saturating_add(2),
+            y: start_y,
+            width: area.width.saturating_sub(4),
+            height: info_height,
+        };
+
+        let mut lines = Vec::new();
+        if detected.is_none() {
+            let warn_symbol = if state.basic_terminal { "!" } else { "⚠" };
+            lines.push(Line::from(vec![Span::styled(
+                format!("{warn_symbol} Install mpv or VLC to enable playback"),
+                theme.rating.add_modifier(Modifier::BOLD),
+            )]));
+        }
+
+        let check_sym = if state.basic_terminal { "✓" } else { "✓" };
+        let warn_sym = if state.basic_terminal { "!" } else { "⚠" };
+
+        lines.push(Line::from(vec![Span::styled(
+            format!("mpv: resume position {check_sym} custom headers {check_sym} subtitle passthrough {check_sym}"),
+            theme.text_dim,
+        )]));
+        lines.push(Line::from(vec![Span::styled(
+            format!("VLC: resume position {check_sym} custom headers {warn_sym} subtitle passthrough {check_sym}"),
+            theme.text_dim,
+        )]));
+
+        frame.render_widget(Paragraph::new(lines), info_area);
     }
 }
 
@@ -1250,8 +1313,8 @@ mod tests {
             .collect::<Vec<_>>()
             .join("\n");
 
-        assert!(rendered.contains("Default Media Player"));
-        assert!(!rendered.contains("▸ Default Media Player"));
+        assert!(rendered.contains("Video Player"));
+        assert!(!rendered.contains("▸ Video Player"));
     }
     #[test]
     fn test_render_appearance_labels() {
