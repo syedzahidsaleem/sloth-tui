@@ -178,6 +178,7 @@ pub enum Action {
     PlaybackStarted,
     PlaybackEnded {
         resume_position_secs: Option<f64>,
+        duration_secs: Option<f64>,
     },
     AnimeEpisodesReceived(Vec<crate::providers::models::EpisodeRef>),
     AniListAuthStatus {
