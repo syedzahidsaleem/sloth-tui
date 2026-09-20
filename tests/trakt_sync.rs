@@ -61,20 +61,18 @@ async fn test_trakt_expired_token_without_secret() {
     let pool = setup_test_db().await;
 
     // Store token that expired in the past (-3600s)
-    TraktClient::store_tokens(
-        &pool,
-        "old_expired_token",
-        Some("refresh_token"),
-        -3600,
-    )
-    .await
-    .unwrap();
+    TraktClient::store_tokens(&pool, "old_expired_token", Some("refresh_token"), -3600)
+        .await
+        .unwrap();
 
     // Without secret provided, cannot refresh -> should return None
     let client = TraktClient::authenticate(&pool, DEFAULT_TRAKT_CLIENT_ID, None)
         .await
         .unwrap();
-    assert!(client.is_none(), "Expired token without secret must return None");
+    assert!(
+        client.is_none(),
+        "Expired token without secret must return None"
+    );
 }
 
 #[tokio::test]
@@ -112,7 +110,10 @@ async fn test_trakt_offline_movie_mark_watched_queued_as_dirty() {
     // Call mark_watched with in-memory pool; network call will fail or be unreachable,
     // so it should fallback to recording a dirty=1 entry locally in SQLite trakt_entries.
     let res = client.mark_watched(Some(&pool), &media, None, None).await;
-    assert!(res.is_err(), "Network call to dummy Trakt endpoint should fail");
+    assert!(
+        res.is_err(),
+        "Network call to dummy Trakt endpoint should fail"
+    );
 
     let row: (String, Option<String>, String, i64) = sqlx::query_as(
         "SELECT trakt_id, media_id, kind, dirty FROM trakt_entries WHERE trakt_id = 'movie:mock_movie_42'",
@@ -124,7 +125,10 @@ async fn test_trakt_offline_movie_mark_watched_queued_as_dirty() {
     assert_eq!(row.0, "movie:mock_movie_42");
     assert_eq!(row.1, Some("mock_movie_42".to_string()));
     assert_eq!(row.2, "movie");
-    assert_eq!(row.3, 1, "Failed Trakt scrobble must be recorded as dirty = 1");
+    assert_eq!(
+        row.3, 1,
+        "Failed Trakt scrobble must be recorded as dirty = 1"
+    );
 }
 
 #[tokio::test]
