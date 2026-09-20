@@ -118,6 +118,9 @@ impl App {
         let config = crate::tui::config::load();
         state.auto_update = config.auto_update;
         state.discord_rpc_enabled = config.discord_rpc_enabled;
+        state.notifications_enabled = config.notifications.enabled;
+        state.f1_lead_time_minutes = config.notifications.f1_lead_time_minutes;
+        state.anime_alerts = config.notifications.anime_alerts;
         state.last_update_check = config.last_update_check;
         state.moviebox_enabled = config.moviebox_enabled;
         state.fourkhdhub_enabled = config.fourkhdhub_enabled;
@@ -290,6 +293,11 @@ impl App {
                 .as_ref()
                 .map(|p| p.to_string_lossy().to_string()),
             discord_rpc_enabled: self.state.discord_rpc_enabled,
+            notifications: crate::config::NotificationsConfig {
+                enabled: self.state.notifications_enabled,
+                f1_lead_time_minutes: self.state.f1_lead_time_minutes,
+                anime_alerts: self.state.anime_alerts,
+            },
         };
         crate::tui::config::save(&config);
     }
