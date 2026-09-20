@@ -234,13 +234,12 @@ impl App {
                         });
                     }
 
-                    if let Ok(Some(_client)) =
-                        crate::tracking::trakt::TraktClient::authenticate(
-                            &pool,
-                            crate::tracking::trakt::DEFAULT_TRAKT_CLIENT_ID,
-                            None,
-                        )
-                        .await
+                    if let Ok(Some(_client)) = crate::tracking::trakt::TraktClient::authenticate(
+                        &pool,
+                        crate::tracking::trakt::DEFAULT_TRAKT_CLIENT_ID,
+                        None,
+                    )
+                    .await
                     {
                         let _ = trakt_tx.send(crate::tui::action::Action::TraktAuthStatus {
                             authenticated: true,
