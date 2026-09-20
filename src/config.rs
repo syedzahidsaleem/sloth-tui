@@ -48,6 +48,8 @@ pub struct Config {
     pub download_dir: Option<String>,
     /// Whether Discord Rich Presence is enabled.
     pub discord_rpc_enabled: bool,
+    /// Background notification settings.
+    pub notifications: NotificationsConfig,
 }
 
 impl Default for Config {
@@ -71,6 +73,29 @@ impl Default for Config {
             default_player: None,
             download_dir: None,
             discord_rpc_enabled: true,
+            notifications: NotificationsConfig::default(),
+        }
+    }
+}
+
+/// Notifications configuration settings.
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(default)]
+pub struct NotificationsConfig {
+    /// Whether background OS notifications are enabled.
+    pub enabled: bool,
+    /// Alert lead time in minutes for F1 sessions.
+    pub f1_lead_time_minutes: u32,
+    /// Whether anime episode alerts are enabled.
+    pub anime_alerts: bool,
+}
+
+impl Default for NotificationsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            f1_lead_time_minutes: 15,
+            anime_alerts: true,
         }
     }
 }
