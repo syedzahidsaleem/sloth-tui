@@ -676,7 +676,7 @@ fn render_appearance_settings(frame: &mut Frame, area: Rect, state: &AppState, t
 }
 
 fn render_accounts_settings(frame: &mut Frame, area: Rect, state: &AppState, theme: &Theme) {
-    let row_rects = settings_row_rects_in_area(area, 1);
+    let row_rects = settings_row_rects_in_area(area, 2);
     let has_active_popup = has_active_settings_popup(state);
 
     if let Some(&row_area) = row_rects.first() {
@@ -717,6 +717,57 @@ fn render_accounts_settings(frame: &mut Frame, area: Rect, state: &AppState, the
                 is_selected,
                 has_active_popup,
                 label: "AniList",
+                value_spans,
+            },
+            theme,
+            state.basic_terminal,
+        );
+    }
+
+    if let Some(&row_area) = row_rects.get(1) {
+        let is_selected = state.settings_selected_row == 1;
+        let is_active_selected = is_selected && !has_active_popup;
+
+        let value_spans = if state.trakt_authenticated {
+            let username = state.trakt_username.as_deref().unwrap_or("Connected");
+            vec![
+                Span::styled(format!("Logged in as {username} "), theme.accent),
+                Span::styled(
+                    "[Logout]",
+                    if is_active_selected {
+                        theme.error.add_modifier(Modifier::BOLD)
+                    } else {
+                        theme.muted
+                    },
+                ),
+            ]
+        } else if state.trakt_auth_pending {
+            let code = state.trakt_user_code.as_deref().unwrap_or("...");
+            vec![
+                Span::styled(format!("Code: {code} (trakt.tv/activate) "), theme.accent),
+                Span::styled("[Waiting]", theme.muted),
+            ]
+        } else {
+            vec![
+                Span::styled("Not logged in ", theme.muted),
+                Span::styled(
+                    "[Login]",
+                    if is_active_selected {
+                        theme.accent.add_modifier(Modifier::BOLD)
+                    } else {
+                        theme.text
+                    },
+                ),
+            ]
+        };
+
+        render_row(
+            frame,
+            row_area,
+            SettingRow {
+                is_selected,
+                has_active_popup,
+                label: "Trakt.tv",
                 value_spans,
             },
             theme,
@@ -1269,6 +1320,7 @@ mod tests {
             .join("\n");
 
         assert!(rendered.contains("AniList"));
+        assert!(rendered.contains("Trakt.tv"));
         assert!(rendered.contains("Not logged in"));
         assert!(rendered.contains("[Login]"));
 
