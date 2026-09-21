@@ -287,8 +287,7 @@ impl App {
                 if row == layout.button_row_y {
                     if col < layout.update_btn_end_x {
                         if is_homebrew {
-                            self.state
-                                .set_status_short("Run: brew upgrade sloth-tui");
+                            self.state.set_status_short("Run: brew upgrade sloth-tui");
                             self.state.notify(
                                 NotificationKind::Info,
                                 "Homebrew Upgrade",
