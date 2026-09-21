@@ -105,8 +105,7 @@ impl App {
                         return None;
                     }
                     KeyCode::Char('b') | KeyCode::Char('B') if is_homebrew => {
-                        self.state
-                            .set_status_short("Run: brew upgrade sloth-tui");
+                        self.state.set_status_short("Run: brew upgrade sloth-tui");
                         self.state.notify(
                             crate::tui::overlay::NotificationKind::Info,
                             "Homebrew Upgrade",
