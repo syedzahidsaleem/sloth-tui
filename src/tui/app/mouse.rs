@@ -288,11 +288,11 @@ impl App {
                     if col < layout.update_btn_end_x {
                         if is_homebrew {
                             self.state
-                                .set_status_short("Run: brew upgrade moviebox-tui");
+                                .set_status_short("Run: brew upgrade sloth-tui");
                             self.state.notify(
                                 NotificationKind::Info,
                                 "Homebrew Upgrade",
-                                "Run: brew upgrade moviebox-tui",
+                                "Run: brew upgrade sloth-tui",
                             );
                         } else {
                             self.action_sender.send(Action::StartSelfUpdate).ok();
