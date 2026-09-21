@@ -832,7 +832,7 @@ impl Default for AppState {
             notifications: std::collections::VecDeque::new(),
             update_available: None,
             auto_update: true,
-            discord_rpc_enabled: true,
+            discord_rpc_enabled: false,
             notifications_enabled: true,
             f1_lead_time_minutes: 15,
             anime_alerts: true,
