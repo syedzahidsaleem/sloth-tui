@@ -51,7 +51,7 @@ impl Provider for FourKHdHubClient {
             supports_pagination: false,
             supports_series: true,
             supports_subtitles: true,
-            supports_homepage: false,
+            supports_homepage: true,
         }
     }
 

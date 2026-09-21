@@ -54,6 +54,18 @@ impl FourKHdHubClient {
         Ok(())
     }
 
+    pub async fn homepage(&self, page: usize) -> Result<Vec<CatalogItem>, FourKHdHubError> {
+        let url = if page <= 1 {
+            self.base_url.clone()
+        } else {
+            self.base_url
+                .join(&format!("page/{}/", page))
+                .unwrap_or_else(|_| self.base_url.clone())
+        };
+        let html = self.fetch_text(url).await?;
+        parser::parse_search(&self.base_url, &html)
+    }
+
     pub async fn search(&self, query: &str) -> Result<Vec<CatalogItem>, FourKHdHubError> {
         let mut url = self.base_url.clone();
         url.query_pairs_mut().append_pair("s", query);
@@ -132,7 +144,7 @@ impl FourKHdHubClient {
 
         if unique_candidates.is_empty() {
             return Err(FourKHdHubError::NoPlayableMirror(
-                "Mirrors for this release are dead or expired on 4KHDHub. Select another release (e.g. 1080p) or press Ctrl+P for MovieBox.".into(),
+                "Mirrors for this release are dead or expired on 4KHDHub. Select another release (e.g. 1080p) or press Ctrl+P for Sloth.".into(),
             ));
         }
 
@@ -181,7 +193,7 @@ impl FourKHdHubClient {
             release.filename
         );
         Err(FourKHdHubError::NoPlayableMirror(
-            "Mirrors for this release are dead or expired on 4KHDHub. Select another release (e.g. 1080p) or press Ctrl+P for MovieBox.".into(),
+            "Mirrors for this release are dead or expired on 4KHDHub. Select another release (e.g. 1080p) or press Ctrl+P for Sloth.".into(),
         ))
     }
 
