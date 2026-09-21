@@ -7,3 +7,4 @@ Cargo.lock
 sloth.log
 sloth-*.log
 cache/
+/bin/
