@@ -305,20 +305,20 @@ impl App {
                 crate::tui::state::AppMode::Streaming => {
                     if self.state.active_provider == crate::providers::models::ProviderKind::Addons
                     {
-                        "MovieBox-Tui — Addons".to_string()
+                        "Sloth — Addons".to_string()
                     } else {
-                        "MovieBox-Tui — Streaming".to_string()
+                        "Sloth — Streaming".to_string()
                     }
                 }
-                crate::tui::state::AppMode::Tv => "MovieBox-Tui — Live TV".to_string(),
+                crate::tui::state::AppMode::Tv => "Sloth — Live TV".to_string(),
             },
             Screen::Details => {
                 if let Some(details) = &self.state.selected_details {
                     if !details.title.is_empty() {
-                        return format!("MovieBox-Tui — {}", details.title);
+                        return format!("Sloth — {}", details.title);
                     }
                 }
-                "MovieBox-Tui — Details".to_string()
+                "Sloth — Details".to_string()
             }
         }
     }
@@ -1269,7 +1269,7 @@ impl App {
                         Line::from(vec![
                             Span::styled("Homebrew Managed • Run: ", self.theme.text_dim),
                             Span::styled(
-                                "brew upgrade moviebox-tui",
+                                "brew upgrade sloth-tui",
                                 self.theme
                                     .shortcut
                                     .add_modifier(ratatui::style::Modifier::BOLD),
@@ -1299,7 +1299,7 @@ impl App {
                 crate::updater::apply::InstallationEnvironment::Snap => {
                     text.push(
                         Line::from(vec![Span::styled(
-                            "Snap sandbox • Run: sudo snap refresh moviebox-tui",
+                            "Snap sandbox • Run: sudo snap refresh sloth-tui",
                             self.theme.accent,
                         )])
                         .alignment(Alignment::Center),
@@ -1583,9 +1583,9 @@ impl App {
         let action_text = if progress_msg.contains("SHA256") || progress_msg.contains("checksum") {
             "Verifying release checksum...".to_string()
         } else if progress_msg.contains("Extracting") || progress_msg.contains("Applying") {
-            format!("Installing MovieBox-Tui v{target_version}...")
+            format!("Installing Sloth v{target_version}...")
         } else {
-            format!("Downloading MovieBox-Tui v{target_version}...")
+            format!("Downloading Sloth v{target_version}...")
         };
 
         let (warn_icon, warn_style) = if self.state.basic_terminal {
@@ -1776,7 +1776,7 @@ mod tests {
         }
 
         assert!(rendered.contains("Self-Update in Progress"));
-        assert!(rendered.contains("Downloading MovieBox-Tui v"));
+        assert!(rendered.contains("Downloading Sloth v"));
         assert!(rendered.contains("⚠"));
         assert!(rendered.contains("Please wait • do not close terminal"));
 
@@ -1797,7 +1797,7 @@ mod tests {
             basic_rendered.push('\n');
         }
         assert!(basic_rendered.contains("Self-Update in Progress"));
-        assert!(basic_rendered.contains("Installing MovieBox-Tui v"));
+        assert!(basic_rendered.contains("Installing Sloth v"));
         assert!(basic_rendered.contains("[!]"));
         assert!(basic_rendered.contains("Please wait - do not close terminal"));
 
@@ -1820,7 +1820,7 @@ mod tests {
             min_rendered.push('\n');
         }
         assert!(min_rendered.contains("Self-Update in Progress"));
-        assert!(min_rendered.contains("Downloading MovieBox-Tui v"));
+        assert!(min_rendered.contains("Downloading Sloth v"));
         assert!(min_rendered.contains("Please wait • do not close terminal"));
     }
 }
