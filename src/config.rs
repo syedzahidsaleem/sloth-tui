@@ -72,7 +72,7 @@ impl Default for Config {
             addons_enabled: false,
             default_player: None,
             download_dir: None,
-            discord_rpc_enabled: false,
+            discord_rpc_enabled: true,
             notifications: NotificationsConfig::default(),
         }
     }
