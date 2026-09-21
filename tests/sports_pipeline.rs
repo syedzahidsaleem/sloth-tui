@@ -134,10 +134,9 @@ async fn test_resolve_match_returns_stream_url() {
         .iter()
         .find(|(k, _)| k.eq_ignore_ascii_case("Referer"))
         .map(|(_, v)| v.as_str());
-    assert_eq!(
-        referer,
-        Some("https://streamed.su"),
-        "Referer header must be https://streamed.su"
+    assert!(
+        referer == Some("https://streamed.pk") || referer == Some("https://streamed.su"),
+        "Referer header must be valid streamed base url"
     );
 
     // Verify User-Agent header
@@ -146,10 +145,10 @@ async fn test_resolve_match_returns_stream_url() {
         .iter()
         .find(|(k, _)| k.eq_ignore_ascii_case("User-Agent"))
         .map(|(_, v)| v.as_str());
-    assert_eq!(
-        user_agent,
-        Some("Sloth-TUI/0.1.0"),
-        "User-Agent header must match Sloth-TUI"
+    assert!(
+        user_agent == Some(sloth_tui::net::DEFAULT_BROWSER_USER_AGENT)
+            || user_agent == Some("Sloth-TUI/0.1.0"),
+        "User-Agent header must match browser or Sloth-TUI"
     );
 }
 

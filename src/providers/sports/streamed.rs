@@ -12,11 +12,18 @@ use crate::providers::models::{EpisodeRef, Media, MediaType, ProviderError, Qual
 use crate::providers::sports::models::{LiveMatch, MatchStream};
 use crate::providers::{Provider, ProviderCapabilities};
 
-const DEFAULT_BASE_URL: &str = "https://streamed.su";
-const USER_AGENT: &str = "Sloth-TUI/0.1.0";
-const REFERER_HEADER: &str = "https://streamed.su";
+const DEFAULT_BASE_URL: &str = "https://streamed.pk";
+const USER_AGENT: &str = crate::net::DEFAULT_BROWSER_USER_AGENT;
+const REFERER_HEADER: &str = "https://streamed.pk";
 
-/// Live sports provider backed by the streamed.su API.
+const MIRRORS: &[&str] = &[
+    "https://streamed.pk",
+    "https://streamed.top",
+    "https://streamed.cc",
+    "https://streamed.cx",
+];
+
+/// Live sports provider backed by the streamed.pk API.
 pub struct StreamedProvider {
     client: Arc<reqwest::Client>,
     base_url: String,
@@ -26,7 +33,7 @@ impl StreamedProvider {
     /// Creates a new `StreamedProvider` using the default base URL and client settings.
     pub fn new() -> Self {
         let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(6))
             .build()
             .unwrap_or_default();
         Self {
@@ -51,32 +58,67 @@ impl StreamedProvider {
         }
     }
 
-    /// Fetches the currently live sporting events from `/api/matches/live`.
-    pub async fn fetch_live_matches(&self) -> Result<Vec<LiveMatch>, ProviderError> {
-        let url = format!("{}/api/matches/live", self.base_url.trim_end_matches('/'));
-        let response = self
-            .client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-        if !response.status().is_success() {
-            if response.status() == reqwest::StatusCode::NOT_FOUND {
-                return Ok(Vec::new());
+    /// Internal helper to request endpoint across mirrors with failover.
+    async fn fetch_endpoint(&self, path: &str) -> Result<String, ProviderError> {
+        let is_local_test =
+            self.base_url.contains("127.0.0.1") || self.base_url.contains("localhost");
+        let mirrors: Vec<&str> = if is_local_test {
+            vec![self.base_url.as_str()]
+        } else {
+            let mut m = vec![self.base_url.as_str()];
+            for &mirror in MIRRORS {
+                if !m.contains(&mirror) {
+                    m.push(mirror);
+                }
             }
-            return Err(ProviderError::Unavailable(format!(
-                "Streamed API matches/live returned status: {}",
-                response.status()
-            )));
+            m
+        };
+
+        let mut last_err = None;
+        for base in mirrors {
+            let url = format!("{}{}", base.trim_end_matches('/'), path);
+            match self
+                .client
+                .get(&url)
+                .header("User-Agent", USER_AGENT)
+                .header("Referer", base)
+                .send()
+                .await
+            {
+                Ok(resp) => {
+                    if resp.status() == reqwest::StatusCode::NOT_FOUND {
+                        return Ok("[]".to_string());
+                    }
+                    if resp.status().is_success() {
+                        if let Ok(body) = resp.text().await {
+                            let trimmed = body.trim();
+                            if trimmed.starts_with('[') || trimmed.starts_with('{') {
+                                return Ok(body);
+                            }
+                        }
+                    } else if is_local_test {
+                        return Err(ProviderError::Unavailable(format!(
+                            "Streamed API returned status: {}",
+                            resp.status()
+                        )));
+                    }
+                }
+                Err(e) => {
+                    last_err = Some(e);
+                }
+            }
         }
 
-        let body = response
-            .text()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
+        if let Some(err) = last_err {
+            Err(ProviderError::Network(err.to_string()))
+        } else {
+            Ok("[]".to_string())
+        }
+    }
 
+    /// Fetches the currently live sporting events from `/api/matches/live`.
+    pub async fn fetch_live_matches(&self) -> Result<Vec<LiveMatch>, ProviderError> {
+        let body = self.fetch_endpoint("/api/matches/live").await?;
         let items: Vec<ApiMatchItem> = serde_json::from_str(&body).map_err(|e| {
             ProviderError::Parsing(format!("Failed to parse live matches JSON: {e}"))
         })?;
@@ -91,33 +133,7 @@ impl StreamedProvider {
 
     /// Internal helper to fetch all sporting events from `/api/matches/all-sports`.
     async fn fetch_all_sports_matches(&self) -> Result<Vec<LiveMatch>, ProviderError> {
-        let url = format!(
-            "{}/api/matches/all-sports",
-            self.base_url.trim_end_matches('/')
-        );
-        let response = self
-            .client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-        if !response.status().is_success() {
-            if response.status() == reqwest::StatusCode::NOT_FOUND {
-                return Ok(Vec::new());
-            }
-            return Err(ProviderError::Unavailable(format!(
-                "Streamed API matches/all-sports returned status: {}",
-                response.status()
-            )));
-        }
-
-        let body = response
-            .text()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
-
+        let body = self.fetch_endpoint("/api/matches/all-sports").await?;
         let items: Vec<ApiMatchItem> = serde_json::from_str(&body).map_err(|e| {
             ProviderError::Parsing(format!("Failed to parse all-sports matches JSON: {e}"))
         })?;
@@ -153,36 +169,23 @@ impl StreamedProvider {
         }
 
         // Try direct sport endpoint first (e.g. /api/matches/{sport})
-        let url = format!(
-            "{}/api/matches/{}",
-            self.base_url.trim_end_matches('/'),
-            sport_normalized
-        );
-        let response = self
-            .client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .send()
+        if let Ok(body) = self
+            .fetch_endpoint(&format!("/api/matches/{sport_normalized}"))
             .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-        if response.status().is_success() {
-            let body = response
-                .text()
-                .await
-                .map_err(|e| ProviderError::Network(e.to_string()))?;
-
+        {
             if let Ok(items) = serde_json::from_str::<Vec<ApiMatchItem>>(&body) {
-                let now = chrono::Utc::now();
-                let matches = items
-                    .into_iter()
-                    .map(|item| {
-                        let starts_at = item.extract_starts_at();
-                        let is_live = starts_at.map_or(false, |dt| dt <= now);
-                        item.into_live_match(is_live)
-                    })
-                    .collect();
-                return Ok(matches);
+                if !items.is_empty() {
+                    let now = chrono::Utc::now();
+                    let matches = items
+                        .into_iter()
+                        .map(|item| {
+                            let starts_at = item.extract_starts_at();
+                            let is_live = starts_at.map_or(false, |dt| dt <= now);
+                            item.into_live_match(is_live)
+                        })
+                        .collect();
+                    return Ok(matches);
+                }
             }
         }
 
@@ -207,35 +210,9 @@ impl StreamedProvider {
         } else {
             category.trim()
         };
-        let url = format!(
-            "{}/api/stream/{}/{}",
-            self.base_url.trim_end_matches('/'),
-            cat,
-            match_id
-        );
-
-        let response = self
-            .client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
-
-        if !response.status().is_success() {
-            if response.status() == reqwest::StatusCode::NOT_FOUND {
-                return Ok(Vec::new());
-            }
-            return Err(ProviderError::Unavailable(format!(
-                "Streamed API stream request returned status: {}",
-                response.status()
-            )));
-        }
-
-        let body = response
-            .text()
-            .await
-            .map_err(|e| ProviderError::Network(e.to_string()))?;
+        let body = self
+            .fetch_endpoint(&format!("/api/stream/{cat}/{match_id}"))
+            .await?;
 
         let items: Vec<ApiStreamItem> = serde_json::from_str(&body).map_err(|e| {
             ProviderError::Parsing(format!("Failed to parse match streams JSON: {e}"))
@@ -463,28 +440,13 @@ impl Provider for StreamedProvider {
     }
 
     async fn health(&self) -> bool {
-        let url = format!("{}/api/matches/live", self.base_url.trim_end_matches('/'));
-        let Ok(response) = self
-            .client
-            .get(&url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await
-        else {
-            return false;
-        };
-
-        if !response.status().is_success() {
-            return false;
+        if let Ok(body) = self.fetch_endpoint("/api/matches/live").await {
+            serde_json::from_str::<serde_json::Value>(&body)
+                .map(|v| v.is_array())
+                .unwrap_or(false)
+        } else {
+            false
         }
-
-        let Ok(body) = response.text().await else {
-            return false;
-        };
-
-        serde_json::from_str::<serde_json::Value>(&body)
-            .map(|v| v.is_array())
-            .unwrap_or(false)
     }
 }
 

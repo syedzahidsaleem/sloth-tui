@@ -127,7 +127,7 @@ pub fn handle_stream_play(state: &mut AppState, tx: &mpsc::UnboundedSender<Actio
     }
 }
 
-/// Re-fetches current sport matches from streamed.su (e.g. on 'r' or periodic 5-minute tick).
+/// Re-fetches current sport matches from streamed.pk (e.g. on 'r' or periodic 5-minute tick).
 pub fn refresh_live_data(state: &mut AppState, tx: &mpsc::UnboundedSender<Action>) {
     state.sports_tab.last_refresh = Some(std::time::Instant::now());
     state.is_loading = true;
