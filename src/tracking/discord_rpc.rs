@@ -5,6 +5,27 @@ use crate::providers::models::{EpisodeRef, Media};
 /// Default placeholder Discord Application ID for Sloth.
 pub const DEFAULT_DISCORD_APP_ID: u64 = 1234567890;
 
+/// Checks if a Discord IPC pipe or socket is currently available.
+pub fn is_discord_running() -> bool {
+    #[cfg(windows)]
+    {
+        (0..10).any(|i| std::path::Path::new(&format!(r"\\.\pipe\discord-ipc-{i}")).exists())
+    }
+    #[cfg(unix)]
+    {
+        let runtime = std::env::var("XDG_RUNTIME_DIR")
+            .unwrap_or_else(|_| std::env::var("TMPDIR").unwrap_or_else(|_| "/tmp".to_string()));
+        (0..10).any(|i| {
+            std::path::Path::new(&format!("{runtime}/discord-ipc-{i}")).exists()
+                || std::path::Path::new(&format!("/tmp/discord-ipc-{i}")).exists()
+        })
+    }
+    #[cfg(not(any(windows, unix)))]
+    {
+        false
+    }
+}
+
 #[cfg(feature = "discord")]
 pub struct DiscordRpc {
     client: discord_presence::Client,
@@ -23,7 +44,7 @@ impl DiscordRpc {
             .unwrap_or(DEFAULT_DISCORD_APP_ID);
 
         let mut client = discord_presence::Client::new(app_id);
-        if enabled {
+        if enabled && is_discord_running() {
             let _ = client.start();
         }
 
@@ -37,7 +58,9 @@ impl DiscordRpc {
         }
         self.enabled = enabled;
         if enabled {
-            let _ = self.client.start();
+            if is_discord_running() {
+                let _ = self.client.start();
+            }
         } else {
             self.clear();
         }
