@@ -19,7 +19,7 @@ use crate::providers::models::{
 use crate::providers::{Provider, ProviderCapabilities};
 
 const DEFAULT_BASE_URL: &str = "https://api.allanime.day";
-const USER_AGENT: &str = "Sloth-TUI/0.1.0";
+const USER_AGENT: &str = crate::net::DEFAULT_BROWSER_USER_AGENT;
 const REFERER: &str = "https://allanime.to";
 
 /// AllAnime GraphQL media provider implementation.

@@ -15,7 +15,7 @@ use crate::providers::models::{
 use crate::providers::{Provider, ProviderCapabilities};
 
 const DEFAULT_BASE_URL: &str = "https://hianime.to";
-const USER_AGENT: &str = "Sloth-TUI/0.1.0";
+const USER_AGENT: &str = crate::net::DEFAULT_BROWSER_USER_AGENT;
 
 /// HiAnime media provider implementation.
 pub struct HiAnimeProvider {
