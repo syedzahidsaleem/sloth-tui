@@ -992,9 +992,7 @@ impl App {
                             self.state.notify(
                                 NotificationKind::Info,
                                 "Update Available",
-                                format!(
-                                    "Sloth v{version} is available. Exit search to view."
-                                ),
+                                format!("Sloth v{version} is available. Exit search to view."),
                             );
                         } else if self.state.is_playing || self.state.download_progress.is_some() {
                             self.state.update_available = Some((version.clone(), notes));
