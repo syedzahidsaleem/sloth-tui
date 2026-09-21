@@ -856,17 +856,17 @@ mod tests {
     }
     #[test]
     fn test_truncate_width_and_simd_ascii_zero_alloc() {
-        let ascii_fit = "MovieBox";
+        let ascii_fit = "Sloth";
         match truncate_width(ascii_fit, 10) {
-            Cow::Borrowed(b) => assert_eq!(b, "MovieBox"),
+            Cow::Borrowed(b) => assert_eq!(b, "Sloth"),
             Cow::Owned(_) => panic!("expected borrowed Cow for fitting ascii string"),
         }
-        let ascii_exact = "MovieBox";
-        match truncate_width(ascii_exact, 8) {
-            Cow::Borrowed(b) => assert_eq!(b, "MovieBox"),
+        let ascii_exact = "Sloth";
+        match truncate_width(ascii_exact, 5) {
+            Cow::Borrowed(b) => assert_eq!(b, "Sloth"),
             Cow::Owned(_) => panic!("expected borrowed Cow for exact ascii string"),
         }
-        assert_eq!(truncate_width("MovieBox-Tui Terminal", 11), "MovieBox...");
+        assert_eq!(truncate_width("Sloth-Tui Terminal", 11), "Sloth-Tu...");
         assert_eq!(truncate_width("Short", 3), "...");
         assert_eq!(truncate_width("Short", 2), "..");
         assert_eq!(truncate_width("Short", 1), ".");

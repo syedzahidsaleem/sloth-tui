@@ -1301,9 +1301,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
                     clean_source
                 } else {
                     match file.provider {
-                        crate::providers::models::ProviderKind::MovieBox => {
-                            "MovieBox CDN".to_string()
-                        }
+                        crate::providers::models::ProviderKind::MovieBox => "Sloth CDN".to_string(),
                         crate::providers::models::ProviderKind::FourKHdHub => "4KHDHub".to_string(),
                         crate::providers::models::ProviderKind::BdixCircleFtp => {
                             "CircleFTP".to_string()
@@ -2316,7 +2314,7 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
 
-        assert!(content.contains("MovieBox CDN"));
+        assert!(content.contains("Sloth CDN"));
         assert!(!content.contains("Multi-Res hevc"));
         assert!(content.contains("Summer Dress S01E02"));
     }
@@ -2917,7 +2915,7 @@ mod tests {
         assert!(content.contains("Movie"));
         assert!(content.contains("Audio (2)"));
         assert!(content.contains("Original"));
-        assert!(content.contains("MovieBox"));
+        assert!(content.contains("Sloth"));
         assert!(content.contains("No Art"));
     }
 

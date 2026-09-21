@@ -187,7 +187,7 @@ pub fn resolution_badge_spans<'a>(
 
 pub fn provider_origin_tag(provider: ProviderKind) -> &'static str {
     match provider {
-        ProviderKind::MovieBox => "[MovieBox]",
+        ProviderKind::MovieBox => "[Sloth]",
         ProviderKind::FourKHdHub => "[4KHD]",
         ProviderKind::BdixCircleFtp => "[CircleFTP]",
         ProviderKind::BdixDhakaFlix => "[DhakaFlix]",
@@ -504,7 +504,7 @@ mod tests {
     }
     #[test]
     fn test_provider_origin_tag() {
-        assert_eq!(provider_origin_tag(ProviderKind::MovieBox), "[MovieBox]");
+        assert_eq!(provider_origin_tag(ProviderKind::MovieBox), "[Sloth]");
         assert_eq!(provider_origin_tag(ProviderKind::FourKHdHub), "[4KHD]");
         assert_eq!(
             provider_origin_tag(ProviderKind::BdixCircleFtp),

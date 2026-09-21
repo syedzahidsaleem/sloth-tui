@@ -942,15 +942,15 @@ fn is_media_already_downloaded(target_dir: &std::path::Path, base_name: &str) ->
 }
 pub(crate) fn yt_dlp_missing_guidance() -> String {
     if crate::updater::artifact::is_termux_environment() {
-        "MovieBox DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your device (e.g. 'pkg install yt-dlp ffmpeg') to download these streams.".to_string()
+        "Sloth DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your device (e.g. 'pkg install yt-dlp ffmpeg') to download these streams.".to_string()
     } else if cfg!(target_os = "macos") {
-        "MovieBox DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your Mac (e.g. 'brew install yt-dlp ffmpeg') to download these streams.".to_string()
+        "Sloth DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your Mac (e.g. 'brew install yt-dlp ffmpeg') to download these streams.".to_string()
     } else if cfg!(target_os = "windows") {
-        "MovieBox DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your system (e.g. 'winget install yt-dlp.yt-dlp Gyan.FFmpeg') to download these streams.".to_string()
+        "Sloth DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your system (e.g. 'winget install yt-dlp.yt-dlp Gyan.FFmpeg') to download these streams.".to_string()
     } else if cfg!(target_os = "linux") {
-        "MovieBox DASH streams require yt-dlp. Please install yt-dlp and ffmpeg via your system package manager to download these streams.".to_string()
+        "Sloth DASH streams require yt-dlp. Please install yt-dlp and ffmpeg via your system package manager to download these streams.".to_string()
     } else {
-        "MovieBox DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your system to download these streams.".to_string()
+        "Sloth DASH streams require yt-dlp. Please install yt-dlp and ffmpeg on your system to download these streams.".to_string()
     }
 }
 
@@ -1139,7 +1139,7 @@ mod tests {
     #[test]
     fn test_yt_dlp_missing_guidance_contains_platform_hint() {
         let guidance = super::yt_dlp_missing_guidance();
-        assert!(guidance.contains("MovieBox DASH streams require yt-dlp"));
+        assert!(guidance.contains("Sloth DASH streams require yt-dlp"));
         assert!(guidance.contains("install yt-dlp and ffmpeg"));
     }
 

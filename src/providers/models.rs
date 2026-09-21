@@ -8,7 +8,7 @@ use std::fmt;
 pub enum ProviderKind {
     /// MovieBox provider.
     #[default]
-    #[serde(rename = "moviebox", alias = "movie_box")]
+    #[serde(rename = "moviebox", alias = "movie_box", alias = "sloth")]
     MovieBox,
     /// 4KHDHub provider.
     #[serde(rename = "fourkhdhub", alias = "four_k_hd_hub", alias = "4khdhub")]
@@ -47,7 +47,7 @@ impl ProviderKind {
     /// User-visible display label.
     pub const fn label(self) -> &'static str {
         match self {
-            Self::MovieBox => "MovieBox",
+            Self::MovieBox => "Sloth",
             Self::FourKHdHub => "4KHDHub",
             Self::BdixCircleFtp => "CircleFTP (BDIX)",
             Self::BdixDhakaFlix => "DhakaFlix (BDIX)",
@@ -58,7 +58,7 @@ impl ProviderKind {
     /// Parses string identifier into a ProviderKind variant.
     pub fn parse(value: &str) -> Option<Self> {
         match value.trim().to_ascii_lowercase().as_str() {
-            "moviebox" => Some(Self::MovieBox),
+            "sloth" | "moviebox" => Some(Self::MovieBox),
             "4khdhub" | "fourkhdhub" => Some(Self::FourKHdHub),
             "bdix_circleftp" | "circleftp (bdix)" => Some(Self::BdixCircleFtp),
             "bdix_dhakaflix" | "dhakaflix (bdix)" => Some(Self::BdixDhakaFlix),
@@ -1001,7 +1001,7 @@ mod tests {
         let timeout_err = ProviderError::Network("operation timed out".into());
         assert_eq!(
             timeout_err.user_message(ProviderKind::MovieBox),
-            "MovieBox timed out."
+            "Sloth timed out."
         );
 
         let connect_err = ProviderError::Network("dns lookup failed".into());

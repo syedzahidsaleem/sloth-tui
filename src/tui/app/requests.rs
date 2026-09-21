@@ -215,10 +215,12 @@ impl App {
                 if self.state.is_tv_mode {
                     return None;
                 }
-                if self.state.active_provider != ProviderKind::MovieBox {
+                if self.state.active_provider != ProviderKind::MovieBox
+                    && self.state.active_provider != ProviderKind::FourKHdHub
+                {
                     self.state.is_loading = false;
                     self.state.set_status_long(
-                        "This provider exposes search, not a shared MovieBox homepage.",
+                        "This provider exposes search, not a shared Sloth homepage.",
                     );
                     return None;
                 }
@@ -227,9 +229,11 @@ impl App {
             }
 
             Action::SelectBrowse(preset) => {
-                if self.state.active_provider != ProviderKind::MovieBox {
+                if self.state.active_provider != ProviderKind::MovieBox
+                    && self.state.active_provider != ProviderKind::FourKHdHub
+                {
                     self.state
-                        .set_status_long("Browse is available only with the MovieBox provider.");
+                        .set_status_long("Browse is available only with the Sloth provider.");
                     return None;
                 }
                 self.state.show_browse_popup = false;

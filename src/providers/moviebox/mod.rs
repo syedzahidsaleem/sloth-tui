@@ -44,7 +44,7 @@ impl Provider for client::MovieBoxClient {
     }
 
     fn name(&self) -> &'static str {
-        "MovieBox"
+        "Sloth"
     }
 
     fn capabilities(&self) -> ProviderCapabilities {
