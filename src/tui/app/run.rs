@@ -41,6 +41,15 @@ impl App {
             self.action_sender.send(Action::CheckBdixNetwork).ok();
         }
 
+        if self.state.search_results.is_empty() && !self.state.is_tv_mode {
+            self.action_sender
+                .send(Action::FetchHomepage {
+                    tab_id: "2".to_string(),
+                    page: 1,
+                })
+                .ok();
+        }
+
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -520,6 +529,18 @@ impl App {
                         self.state.show_settings_popup = true;
                     }
                     crate::tui::state::Tab::Movies => {
+                        self.state.is_tv_mode = false;
+                    }
+                    crate::tui::state::Tab::Sports => {
+                        self.state.is_tv_mode = false;
+                        if self.state.sports_tab.matches.is_empty() {
+                            crate::tui::app::sports::refresh_live_data(
+                                &mut self.state,
+                                &self.action_sender,
+                            );
+                        }
+                    }
+                    crate::tui::state::Tab::Anime => {
                         self.state.is_tv_mode = false;
                     }
                     _ => {

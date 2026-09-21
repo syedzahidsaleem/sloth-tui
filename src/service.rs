@@ -93,7 +93,16 @@ impl MovieBoxService {
         page: usize,
     ) -> Result<Vec<CatalogItem>, ProviderError> {
         match provider {
-            ProviderKind::MovieBox => self.client.search_catalog(query, page).await,
+            ProviderKind::MovieBox => match self.client.search_catalog(query, page).await {
+                Ok(items) if !items.is_empty() => Ok(items),
+                _ => {
+                    if let Some(ref fourk) = self.fourk_client {
+                        fourk.search_catalog(query, page).await
+                    } else {
+                        self.client.search_catalog(query, page).await
+                    }
+                }
+            },
             ProviderKind::FourKHdHub => {
                 let fourk = self.fourk_client.as_ref().ok_or_else(|| {
                     ProviderError::Unavailable("4KHDHub is unavailable".to_string())
@@ -198,6 +207,16 @@ impl MovieBoxService {
         ),
         String,
     > {
+        // Try 4KHDHub first for live catalog content
+        if let Some(ref fourk) = self.fourk_client {
+            if let Ok(items) = fourk.homepage(page).await {
+                if !items.is_empty() {
+                    return Ok((items, std::collections::HashMap::new()));
+                }
+            }
+        }
+
+        // Fallback to legacy/MovieBox
         let payload = self
             .client
             .get_homepage(tab_id, page)
