@@ -123,11 +123,7 @@ fn render_search_bar(
         ]
     };
 
-    let row_chunks = Layout::horizontal([
-        Constraint::Min(10),
-        Constraint::Length(25),
-    ])
-    .split(inner);
+    let row_chunks = Layout::horizontal([Constraint::Min(10), Constraint::Length(25)]).split(inner);
 
     frame.render_widget(Paragraph::new(Line::from(text_span)), row_chunks[0]);
     frame.render_widget(

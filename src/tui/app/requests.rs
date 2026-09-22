@@ -645,9 +645,7 @@ impl App {
                 }
                 let prov = self.provider_for_subject(&id);
 
-                if prov == ProviderKind::BdixCircleFtp
-                    || prov == ProviderKind::BdixDhakaFlix
-                {
+                if prov == ProviderKind::BdixCircleFtp || prov == ProviderKind::BdixDhakaFlix {
                     self.state.preview_loading = false;
                     self.state.search_preview = None;
                     self.state.poster_image = None;

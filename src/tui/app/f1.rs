@@ -60,7 +60,8 @@ pub fn handle_f1_session_play(
             Ok(_) => {
                 tracing::warn!("No active Formula 1 streams found in sports playlist");
                 let _ = tx.send(Action::SetStatus(
-                    "No active F1 streams found. Broadcasts go live ~15 mins before session start.".to_string(),
+                    "No active F1 streams found. Broadcasts go live ~15 mins before session start."
+                        .to_string(),
                 ));
             }
             Err(e) => {

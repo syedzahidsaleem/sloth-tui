@@ -306,7 +306,10 @@ impl StreamedProvider {
 
                                 MatchStream {
                                     id: item.id.unwrap_or_else(|| {
-                                        format!("stream-{}", item.stream_no.unwrap_or((idx + 1) as u32))
+                                        format!(
+                                            "stream-{}",
+                                            item.stream_no.unwrap_or((idx + 1) as u32)
+                                        )
                                     }),
                                     hd_url,
                                     sd_url,
