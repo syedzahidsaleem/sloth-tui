@@ -61,7 +61,10 @@ cargo install sloth-tui
 
 #### Windows
 ```powershell
-# Via winget
+# Automated PowerShell installer (downloads latest release and configures PATH)
+irm https://raw.githubusercontent.com/syedzahidsaleem/sloth-tui/main/install.ps1 | iex
+
+# Or via winget
 winget install syedzahidsaleem.sloth-tui
 
 # Or via Cargo
