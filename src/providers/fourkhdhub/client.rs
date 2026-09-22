@@ -238,62 +238,35 @@ impl FourKHdHubClient {
                     ));
                 }
 
-                let wrapped = final_url
+                if let Some(wrapped) = final_url
                     .query_pairs()
                     .find(|(name, _)| name == "link")
                     .map(|(_, value)| value.into_owned())
                     .filter(|value| value.starts_with("https://"))
-                    .ok_or_else(|| {
-                        FourKHdHubError::NoPlayableMirror(format!(
-                            "invalid media content type: {content_type}"
-                        ))
-                    })?;
-                hubcloud::validate_playback_url(&wrapped)?;
-                let mut wrapped_request = self
-                    .client
-                    .get(&wrapped)
-                    .header(reqwest::header::RANGE, "bytes=0-8191");
-                for (name, value) in headers {
-                    wrapped_request = wrapped_request.header(name, value);
-                }
-                let wrapped_response = wrapped_request.send().await?.error_for_status()?;
-                final_url = wrapped_response.url().clone();
-                hubcloud::validate_playback_url(final_url.as_str())?;
-                let wrapped_type = wrapped_response
-                    .headers()
-                    .get(reqwest::header::CONTENT_TYPE)
-                    .and_then(|value| value.to_str().ok())
-                    .unwrap_or_default()
-                    .to_ascii_lowercase();
-                if wrapped_type.contains("text/html")
-                    || wrapped_type.contains("application/zip")
-                    || wrapped_type.contains("text/plain")
                 {
-                    let wrapped_bytes = wrapped_response.bytes().await.unwrap_or_default();
-                    let wrapped_lower =
-                        String::from_utf8_lossy(&wrapped_bytes).to_ascii_lowercase();
-                    if wrapped_lower.contains("failed to extract link")
-                        || wrapped_lower.contains("token expired")
-                        || wrapped_lower.contains("file not found")
-                        || wrapped_lower.contains("404 not found")
-                        || wrapped_lower.contains("expired")
-                    {
-                        return Err(FourKHdHubError::NoPlayableMirror(
-                            "upstream mirror reported expired file link".into(),
-                        ));
+                    if hubcloud::validate_playback_url(&wrapped).is_ok() {
+                        let mut wrapped_request = self
+                            .client
+                            .get(&wrapped)
+                            .header(reqwest::header::RANGE, "bytes=0-8191");
+                        for (name, value) in headers {
+                            wrapped_request = wrapped_request.header(name, value);
+                        }
+                        if let Ok(wrapped_response) = wrapped_request.send().await {
+                            if wrapped_response.status().is_success() {
+                                final_url = wrapped_response.url().clone();
+                            }
+                        }
                     }
-                    return Err(FourKHdHubError::NoPlayableMirror(format!(
-                        "invalid wrapped media content type: {wrapped_type}"
-                    )));
                 }
             }
             Ok(final_url.to_string())
         };
 
-        tokio::time::timeout(std::time::Duration::from_millis(3500), probe)
+        tokio::time::timeout(std::time::Duration::from_millis(5000), probe)
             .await
             .map_err(|_| {
-                FourKHdHubError::NoPlayableMirror("mirror preflight probe timed out (3.5s)".into())
+                FourKHdHubError::NoPlayableMirror("mirror preflight probe timed out (5s)".into())
             })?
     }
 
