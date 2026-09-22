@@ -513,6 +513,7 @@ impl Provider for StreamedProvider {
 }
 
 /// Internal representation of match items returned by the streamed.su API.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 struct ApiMatchItem {
     id: String,
@@ -596,6 +597,7 @@ impl ApiMatchItem {
 }
 
 /// Flexible deserialization for team representations.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 enum ApiTeams {
@@ -608,6 +610,7 @@ enum ApiTeams {
 }
 
 /// Flexible timestamp format handling epoch milliseconds or ISO strings.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 #[serde(untagged)]
 enum ApiTimestamp {
@@ -616,6 +619,7 @@ enum ApiTimestamp {
 }
 
 /// Brief stream source reference embedded in match listings.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 struct ApiSourceItem {
     #[serde(default)]
@@ -627,6 +631,7 @@ struct ApiSourceItem {
 }
 
 /// Direct stream metadata returned by `/api/stream/{category}/{match_id}`.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 struct ApiStreamItem {
     #[serde(default)]
