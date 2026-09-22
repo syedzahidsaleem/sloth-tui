@@ -390,6 +390,14 @@ impl App {
                 }
             }
         }
+
+        if self.state.tv_playlists.is_empty() {
+            self.state.tv_playlists = vec![
+                "https://iptv-org.github.io/iptv/categories/sports.m3u".to_string(),
+                "https://iptv-org.github.io/iptv/categories/news.m3u".to_string(),
+            ];
+            self.save_tv_playlists();
+        }
     }
 
     fn reload_tv_playlists(&self) {

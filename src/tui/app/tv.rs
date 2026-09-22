@@ -155,10 +155,12 @@ impl App {
                 if !query.is_empty() {
                     self.apply_tv_search_results(&query, &lower_query);
                     return None;
+                } else if self.state.is_tv_mode {
+                    self.apply_tv_search_results("", "/list");
                 }
                 self.state
                     .search_list_state
-                    .select(if self.state.tv_channels.is_empty() {
+                    .select(if self.state.search_results.is_empty() {
                         None
                     } else {
                         Some(0)
