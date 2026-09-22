@@ -1401,7 +1401,15 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
 
     match state.active_tab {
         Tab::Anime => {
-            crate::tui::screens::anime::render(frame, content_area, &state.anime_tab, theme);
+            let is_editing = state.input_mode == InputMode::Editing;
+            crate::tui::screens::anime::render(
+                frame,
+                content_area,
+                &state.anime_tab,
+                theme,
+                &state.search_query,
+                is_editing,
+            );
             if state.show_settings_popup {
                 crate::tui::widgets::settings::draw(frame, area, state, theme);
             }

@@ -1307,8 +1307,9 @@ impl App {
                             self.state.favorites_landing_state.select(None);
                             if c == '/' {
                                 self.state.search_query.clear();
+                            } else {
+                                self.state.search_query.insert(c);
                             }
-                            self.state.search_query.insert(c);
 
                             self.state.search_suggestions.clear();
                             self.state.suggest_index = None;
@@ -2094,7 +2095,7 @@ mod tests {
             .streams
             .push(crate::tui::state::MatchStream {
                 id: "stream-1".to_string(),
-                hd_url: Some("https://streamed.su/hd.m3u8".to_string()),
+                hd_url: Some("https://streamed.pk/hd.m3u8".to_string()),
                 sd_url: None,
                 embed_url: None,
                 language: Some("English".to_string()),
@@ -2105,7 +2106,7 @@ mod tests {
             .push(crate::tui::state::MatchStream {
                 id: "stream-2".to_string(),
                 hd_url: None,
-                sd_url: Some("https://streamed.su/sd.m3u8".to_string()),
+                sd_url: Some("https://streamed.pk/sd.m3u8".to_string()),
                 embed_url: None,
                 language: Some("Spanish".to_string()),
             });

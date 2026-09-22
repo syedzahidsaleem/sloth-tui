@@ -15,16 +15,31 @@ use crate::tui::state::{AnimePanelFocus, AnimeTabState};
 use crate::tui::theme::Theme;
 
 /// Renders the complete Anime tab screen view.
-pub fn render(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme: &Theme) {
+pub fn render(
+    frame: &mut Frame,
+    area: Rect,
+    state: &AnimeTabState,
+    theme: &Theme,
+    search_query: &str,
+    is_editing: bool,
+) {
     if area.width < 10 || area.height < 5 {
         return;
     }
 
-    // Split into main panel area and bottom control bar
-    let vertical_layout = Layout::vertical([Constraint::Min(0), Constraint::Length(2)]).split(area);
+    // Split into top search bar, main panel area, and bottom control bar
+    let vertical_layout = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(0),
+        Constraint::Length(2),
+    ])
+    .split(area);
 
-    let panels_area = vertical_layout[0];
-    let bottom_area = vertical_layout[1];
+    let search_area = vertical_layout[0];
+    let panels_area = vertical_layout[1];
+    let bottom_area = vertical_layout[2];
+
+    render_search_bar(frame, search_area, search_query, is_editing, theme);
 
     // Two-panel layout: Left (35% results) and Right (65% details/episodes)
     let panel_columns =
@@ -37,6 +52,88 @@ pub fn render(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme: &Them
     render_left_panel(frame, left_area, state, theme);
     render_right_panel(frame, right_area, state, theme);
     render_bottom_bar(frame, bottom_area, state, theme);
+}
+
+/// Renders the top search bar for searching anime.
+fn render_search_bar(
+    frame: &mut Frame,
+    area: Rect,
+    search_query: &str,
+    is_editing: bool,
+    theme: &Theme,
+) {
+    let border_style = if is_editing {
+        theme.border_focus
+    } else {
+        theme.border
+    };
+
+    let title_style = if is_editing {
+        theme.accent
+    } else {
+        theme.title
+    };
+
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_type(BorderType::Rounded)
+        .border_style(border_style)
+        .title(Span::styled(" ⛩ Anime Search [/] ", title_style));
+
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    if inner.height == 0 || inner.width == 0 {
+        return;
+    }
+
+    let is_empty = search_query.is_empty();
+    let text_span = if is_empty {
+        Span::styled(
+            " Type '/' to search anime (e.g. Solo Leveling, Jujutsu Kaisen, Naruto)...",
+            theme.text_dim,
+        )
+    } else if is_editing {
+        Span::styled(
+            format!(" {search_query}█"),
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        )
+    } else {
+        Span::styled(
+            format!(" {search_query}"),
+            Style::default().fg(Color::White),
+        )
+    };
+
+    let hint_spans = if is_editing {
+        vec![
+            Span::styled("[Enter] ", theme.accent.add_modifier(Modifier::BOLD)),
+            Span::styled("Search  ", theme.text_dim),
+            Span::styled("[Esc] ", theme.accent),
+            Span::styled("Cancel", theme.text_dim),
+        ]
+    } else {
+        vec![
+            Span::styled("[/] ", theme.accent.add_modifier(Modifier::BOLD)),
+            Span::styled("Search  ", theme.text_dim),
+            Span::styled("[Enter] ", theme.accent),
+            Span::styled("Select", theme.text_dim),
+        ]
+    };
+
+    let row_chunks = Layout::horizontal([
+        Constraint::Min(10),
+        Constraint::Length(25),
+    ])
+    .split(inner);
+
+    frame.render_widget(Paragraph::new(Line::from(text_span)), row_chunks[0]);
+    frame.render_widget(
+        Paragraph::new(Line::from(hint_spans)).alignment(Alignment::Right),
+        row_chunks[1],
+    );
 }
 
 /// Renders the left search results panel (35% width).
