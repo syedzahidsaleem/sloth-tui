@@ -167,8 +167,14 @@ impl App {
                 return;
             }
             Some(ForcedProtocol::Type(ProtocolType::Halfblocks)) => {
-                self.state.image_supported = false;
-                self.state.image_picker = None;
+                let font_size = Self::cell_size_override().unwrap_or(ratatui_image::FontSize {
+                    width: 10,
+                    height: 20,
+                });
+                #[allow(deprecated)]
+                let mut picker = ratatui_image::picker::Picker::from_fontsize(font_size);
+                picker.set_protocol_type(ProtocolType::Halfblocks);
+                self.accept_picker(picker);
                 return;
             }
             Some(ForcedProtocol::Type(protocol)) => {
@@ -242,11 +248,6 @@ impl App {
             }
         }
 
-        if matches!(picker.protocol_type(), ProtocolType::Halfblocks) {
-            self.state.image_supported = false;
-            self.state.image_picker = None;
-            return;
-        }
         self.accept_picker(picker);
     }
 
@@ -514,6 +515,15 @@ impl App {
                 match tab {
                     crate::tui::state::Tab::LiveTV => {
                         self.state.is_tv_mode = true;
+                        self.state.set_mode(crate::tui::state::AppMode::Tv);
+                        if self.state.tv_playlists.is_empty() {
+                            self.load_tv_playlists_from_config();
+                        }
+                        if self.state.tv_channels.is_empty() {
+                            self.reload_tv_playlists();
+                        } else if self.state.search_results.is_empty() {
+                            self.apply_tv_search_results("", "/list");
+                        }
                     }
                     crate::tui::state::Tab::Favorites => {
                         self.state.is_tv_mode = false;
@@ -542,6 +552,13 @@ impl App {
                     }
                     crate::tui::state::Tab::Anime => {
                         self.state.is_tv_mode = false;
+                        if self.state.anime_tab.results.is_empty() {
+                            crate::tui::app::anime::handle_anime_search(
+                                &mut self.state,
+                                &self.action_sender,
+                                "Solo Leveling".to_string(),
+                            );
+                        }
                     }
                     _ => {
                         self.state.is_tv_mode = false;

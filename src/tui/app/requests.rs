@@ -207,6 +207,10 @@ impl App {
                 if query.trim().starts_with('/') {
                     return None;
                 }
+                if self.state.is_tv_mode {
+                    self.apply_tv_search_results(&query, &lower_query);
+                    return None;
+                }
                 let context = self.prepare_search_request(&query);
                 self.run_search_request(query.clone(), force_refresh, context);
             }
@@ -641,8 +645,7 @@ impl App {
                 }
                 let prov = self.provider_for_subject(&id);
 
-                if prov == ProviderKind::FourKHdHub
-                    || prov == ProviderKind::BdixCircleFtp
+                if prov == ProviderKind::BdixCircleFtp
                     || prov == ProviderKind::BdixDhakaFlix
                 {
                     self.state.preview_loading = false;

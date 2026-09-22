@@ -365,7 +365,7 @@ pub fn draw(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) 
 
     let show_poster = !matches!(tier, DetailsLayoutTier::Tiny | DetailsLayoutTier::Narrow)
         && inner_area.height >= 5
-        && inner_area.width >= 75;
+        && inner_area.width >= 55;
     let poster_width = if show_poster {
         let width_for_height = state
             .poster_image
