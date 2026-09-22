@@ -131,9 +131,9 @@ impl StreamedProvider {
         Ok(matches)
     }
 
-    /// Internal helper to fetch all sporting events from `/api/matches/all-sports`.
+    /// Internal helper to fetch all sporting events from `/api/matches/all`.
     async fn fetch_all_sports_matches(&self) -> Result<Vec<LiveMatch>, ProviderError> {
-        let body = self.fetch_endpoint("/api/matches/all-sports").await?;
+        let body = self.fetch_endpoint("/api/matches/all").await?;
         let items: Vec<ApiMatchItem> = serde_json::from_str(&body).map_err(|e| {
             ProviderError::Parsing(format!("Failed to parse all-sports matches JSON: {e}"))
         })?;
@@ -168,23 +168,50 @@ impl StreamedProvider {
             return self.fetch_all_sports_matches().await;
         }
 
+        let cat_query = match sport_normalized.as_str() {
+            "f1" | "formula 1" | "formula1" => "motor-sports",
+            "boxing" | "mma" | "ufc" => "fight",
+            other => other,
+        };
+
         // Try direct sport endpoint first (e.g. /api/matches/{sport})
         if let Ok(body) = self
-            .fetch_endpoint(&format!("/api/matches/{sport_normalized}"))
+            .fetch_endpoint(&format!("/api/matches/{cat_query}"))
             .await
         {
             if let Ok(items) = serde_json::from_str::<Vec<ApiMatchItem>>(&body) {
                 if !items.is_empty() {
                     let now = chrono::Utc::now();
-                    let matches = items
+                    let matches: Vec<LiveMatch> = items
                         .into_iter()
                         .map(|item| {
                             let starts_at = item.extract_starts_at();
                             let is_live = starts_at.map_or(false, |dt| dt <= now);
                             item.into_live_match(is_live)
                         })
+                        .filter(|m| {
+                            let title = m.title.to_lowercase();
+                            if sport_normalized == "f1" {
+                                title.contains("f1")
+                                    || title.contains("formula")
+                                    || title.contains("grand prix")
+                                    || title.contains("nascar")
+                                    || title.contains("rally")
+                            } else if sport_normalized == "boxing" {
+                                title.contains("box") || !title.contains("ufc")
+                            } else if sport_normalized == "mma" {
+                                title.contains("mma")
+                                    || title.contains("ufc")
+                                    || title.contains("pfl")
+                                    || title.contains("contender")
+                            } else {
+                                true
+                            }
+                        })
                         .collect();
-                    return Ok(matches);
+                    if !matches.is_empty() {
+                        return Ok(matches);
+                    }
                 }
             }
         }
@@ -193,77 +220,109 @@ impl StreamedProvider {
         let all_matches = self.fetch_all_sports_matches().await?;
         let filtered = all_matches
             .into_iter()
-            .filter(|m| m.category.eq_ignore_ascii_case(&sport_normalized))
+            .filter(|m| {
+                let cat = m.category.to_lowercase();
+                let title = m.title.to_lowercase();
+                if sport_normalized == "f1" {
+                    cat == "motor-sports"
+                        || title.contains("f1")
+                        || title.contains("formula")
+                        || title.contains("grand prix")
+                        || title.contains("nascar")
+                        || title.contains("rally")
+                } else if sport_normalized == "boxing" {
+                    cat == "fight" && (title.contains("box") || !title.contains("ufc"))
+                } else if sport_normalized == "mma" {
+                    cat == "fight"
+                        && (title.contains("mma")
+                            || title.contains("ufc")
+                            || title.contains("pfl")
+                            || title.contains("contender"))
+                } else {
+                    cat == sport_normalized || cat == cat_query
+                }
+            })
             .collect();
 
         Ok(filtered)
     }
 
-    /// Fetches available stream sources for a specific match from `/api/stream/{category}/{match_id}`.
+    /// Fetches available stream sources for a specific match from `/api/stream/{source}/{match_id}`.
     pub async fn fetch_streams(
         &self,
         category: &str,
         match_id: &str,
     ) -> Result<Vec<MatchStream>, ProviderError> {
         let cat = if category.trim().is_empty() {
-            "all"
+            "admin"
         } else {
             category.trim()
         };
-        let body = self
-            .fetch_endpoint(&format!("/api/stream/{cat}/{match_id}"))
-            .await?;
 
-        let items: Vec<ApiStreamItem> = serde_json::from_str(&body).map_err(|e| {
-            ProviderError::Parsing(format!("Failed to parse match streams JSON: {e}"))
-        })?;
+        // Streamed.pk stream routes are /api/stream/{source}/{id}
+        let endpoints = [
+            format!("/api/stream/{cat}/{match_id}"),
+            format!("/api/stream/admin/{match_id}"),
+            format!("/api/stream/delta/{match_id}"),
+            format!("/api/stream/golf/{match_id}"),
+            format!("/api/stream/alpha/{match_id}"),
+        ];
 
-        let streams = items
-            .into_iter()
-            .enumerate()
-            .map(|(idx, item)| {
-                let hd_url = item
-                    .hd_url
-                    .or_else(|| {
-                        item.stream_url
-                            .as_ref()
-                            .filter(|u| u.contains("hd"))
-                            .cloned()
-                    })
-                    .filter(|u| !u.trim().is_empty());
-                let sd_url = item
-                    .sd_url
-                    .or_else(|| {
-                        item.stream_url
-                            .as_ref()
-                            .filter(|u| u.contains("sd"))
-                            .cloned()
-                    })
-                    .filter(|u| !u.trim().is_empty());
-                let embed_url = item.embed_url.filter(|u| !u.trim().is_empty());
+        for endpoint in &endpoints {
+            if let Ok(body) = self.fetch_endpoint(endpoint).await {
+                if let Ok(items) = serde_json::from_str::<Vec<ApiStreamItem>>(&body) {
+                    if !items.is_empty() {
+                        let streams = items
+                            .into_iter()
+                            .enumerate()
+                            .map(|(idx, item)| {
+                                let hd_url = item
+                                    .hd_url
+                                    .or_else(|| {
+                                        item.stream_url
+                                            .as_ref()
+                                            .filter(|u| u.contains("hd"))
+                                            .cloned()
+                                    })
+                                    .filter(|u| !u.trim().is_empty());
+                                let sd_url = item
+                                    .sd_url
+                                    .or_else(|| {
+                                        item.stream_url
+                                            .as_ref()
+                                            .filter(|u| u.contains("sd"))
+                                            .cloned()
+                                    })
+                                    .filter(|u| !u.trim().is_empty());
+                                let embed_url = item.embed_url.filter(|u| !u.trim().is_empty());
 
-                let quality = if hd_url.is_some() {
-                    Quality::FHD1080
-                } else if sd_url.is_some() {
-                    Quality::SD480
-                } else {
-                    Quality::Auto
-                };
+                                let quality = if item.hd == Some(true) || hd_url.is_some() {
+                                    Quality::FHD1080
+                                } else if sd_url.is_some() {
+                                    Quality::SD480
+                                } else {
+                                    Quality::Auto
+                                };
 
-                MatchStream {
-                    id: item.id.unwrap_or_else(|| {
-                        format!("stream-{}", item.stream_no.unwrap_or((idx + 1) as u32))
-                    }),
-                    hd_url,
-                    sd_url,
-                    embed_url,
-                    language: item.language.filter(|l| !l.trim().is_empty()),
-                    quality,
+                                MatchStream {
+                                    id: item.id.unwrap_or_else(|| {
+                                        format!("stream-{}", item.stream_no.unwrap_or((idx + 1) as u32))
+                                    }),
+                                    hd_url,
+                                    sd_url,
+                                    embed_url,
+                                    language: item.language.filter(|l| !l.trim().is_empty()),
+                                    quality,
+                                }
+                            })
+                            .collect();
+                        return Ok(streams);
+                    }
                 }
-            })
-            .collect();
+            }
+        }
 
-        Ok(streams)
+        Err(ProviderError::NotFound)
     }
 }
 
@@ -556,8 +615,11 @@ enum ApiTimestamp {
 /// Brief stream source reference embedded in match listings.
 #[derive(Debug, Clone, Deserialize)]
 struct ApiSourceItem {
+    #[serde(default)]
+    source: Option<String>,
+    #[serde(default)]
     id: Option<String>,
-    #[serde(rename = "streamNo")]
+    #[serde(rename = "streamNo", default)]
     stream_no: Option<u32>,
 }
 
@@ -570,6 +632,8 @@ struct ApiStreamItem {
     stream_no: Option<u32>,
     #[serde(default)]
     language: Option<String>,
+    #[serde(default)]
+    hd: Option<bool>,
     #[serde(rename = "hdUrl", alias = "hd_url", default)]
     hd_url: Option<String>,
     #[serde(rename = "sdUrl", alias = "sd_url", default)]
@@ -578,4 +642,6 @@ struct ApiStreamItem {
     embed_url: Option<String>,
     #[serde(rename = "streamUrl", alias = "stream_url", alias = "url", default)]
     stream_url: Option<String>,
+    #[serde(default)]
+    source: Option<String>,
 }

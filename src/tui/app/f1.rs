@@ -48,7 +48,7 @@ pub fn handle_f1_session_play(
             Ok(streams) if !streams.is_empty() => {
                 let first_stream = &streams[0];
                 let source = PlaybackSource {
-                    provider: ProviderKind::MovieBox,
+                    provider: ProviderKind::FourKHdHub,
                     url: first_stream.url.clone(),
                     headers: first_stream.headers.clone(),
                     subtitle: None,
@@ -59,9 +59,13 @@ pub fn handle_f1_session_play(
             }
             Ok(_) => {
                 tracing::warn!("No active Formula 1 streams found in sports playlist");
+                let _ = tx.send(Action::SetStatus(
+                    "No active F1 streams found. Broadcasts go live ~15 mins before session start.".to_string(),
+                ));
             }
             Err(e) => {
                 tracing::warn!("Failed to fetch F1 streams: {e}");
+                let _ = tx.send(Action::SetStatus(format!("Failed to load F1 streams: {e}")));
             }
         }
     });

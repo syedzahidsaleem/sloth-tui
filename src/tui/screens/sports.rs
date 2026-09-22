@@ -512,7 +512,7 @@ mod tests {
         });
         state.streams.push(MatchStream {
             id: "stream-1".to_string(),
-            hd_url: Some("https://streamed.su/hd.m3u8".to_string()),
+            hd_url: Some("https://streamed.pk/hd.m3u8".to_string()),
             sd_url: None,
             embed_url: None,
             language: Some("English".to_string()),

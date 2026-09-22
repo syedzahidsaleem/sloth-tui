@@ -113,10 +113,10 @@ pub fn handle_stream_play(state: &mut AppState, tx: &mpsc::UnboundedSender<Actio
     if let Some(url) = stream_url {
         let language = stream.language.as_deref().unwrap_or("Stream");
         let source = PlaybackSource {
-            provider: ProviderKind::MovieBox,
+            provider: ProviderKind::FourKHdHub,
             url: url.clone(),
             headers: vec![
-                ("Referer".into(), "https://streamed.su".into()),
+                ("Referer".into(), "https://streamed.pk".into()),
                 ("User-Agent".into(), "Sloth-TUI/0.1.0".into()),
             ],
             subtitle: None,
