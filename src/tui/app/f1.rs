@@ -59,32 +59,38 @@ pub fn handle_f1_session_play(
             return;
         }
 
-        // Fallback: Check StreamedPk motorsport matches
+        // Fallback: Check StreamedProvider motorsport matches
         let streamed_provider = crate::providers::sports::streamed::StreamedProvider::new();
-        if let Ok(matches) = streamed_provider.fetch_matches("f1").await {
+        if let Ok(matches) = streamed_provider.fetch_live_matches().await {
             if let Some(m) = matches.into_iter().find(|m| {
                 let t = m.title.to_lowercase();
-                t.contains("f1") || t.contains("formula") || t.contains("grand prix")
+                let c = m.category.to_lowercase();
+                c.contains("motor")
+                    || c.contains("f1")
+                    || t.contains("f1")
+                    || t.contains("formula")
+                    || t.contains("grand prix")
             }) {
-                if let Ok(sources) = streamed_provider.fetch_stream_sources(&m.id).await {
-                    if let Some(src) = sources.first() {
-                        let play_url = src.embed_url.clone().unwrap_or_else(|| src.source.clone());
-                        let source = PlaybackSource {
-                            provider: ProviderKind::FourKHdHub,
-                            url: play_url,
-                            headers: vec![
-                                (
-                                    "User-Agent".into(),
-                                    crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
-                                ),
-                                ("Referer".into(), "https://streamed.pk/".into()),
-                            ],
-                            subtitle: None,
-                            source_label: format!("F1 Live — {}", m.title),
-                        };
-                        let _ = tx.send(Action::DispatchPlayback(source));
-                        let _ = tx.send(Action::PlaybackStarted);
-                        return;
+                if let Ok(streams) = streamed_provider.fetch_streams(&m.category, &m.id).await {
+                    if let Some(stream) = streams.first() {
+                        if let Some(play_url) = stream.best_url() {
+                            let source = PlaybackSource {
+                                provider: ProviderKind::FourKHdHub,
+                                url: play_url.to_string(),
+                                headers: vec![
+                                    (
+                                        "User-Agent".into(),
+                                        crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
+                                    ),
+                                    ("Referer".into(), "https://streamed.pk/".into()),
+                                ],
+                                subtitle: None,
+                                source_label: format!("F1 Live — {}", m.title),
+                            };
+                            let _ = tx.send(Action::DispatchPlayback(source));
+                            let _ = tx.send(Action::PlaybackStarted);
+                            return;
+                        }
                     }
                 }
             }
