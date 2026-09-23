@@ -33,7 +33,8 @@ impl StreamedProvider {
     /// Creates a new `StreamedProvider` using the default base URL and client settings.
     pub fn new() -> Self {
         let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(6))
+            .timeout(std::time::Duration::from_secs(8))
+            .cookie_store(true)
             .build()
             .unwrap_or_default();
         Self {
@@ -424,18 +425,37 @@ impl Provider for StreamedProvider {
             .genres
             .first()
             .filter(|g| !g.trim().is_empty())
-            .cloned();
+            .map(|g| g.as_str())
+            .unwrap_or("all");
 
-        let streams = if let Some(cat) = category {
-            self.fetch_streams(&cat, &media.id).await?
-        } else {
-            let live = self.fetch_live_matches().await.unwrap_or_default();
-            if let Some(m) = live.iter().find(|m| m.id == media.id) {
-                self.fetch_streams(&m.category, &media.id).await?
-            } else {
-                self.fetch_streams("all", &media.id).await?
+        let mut streams = self
+            .fetch_streams(category, &media.id)
+            .await
+            .unwrap_or_default();
+
+        if streams.is_empty() {
+            // Find match in live or all-sports to check its direct sources
+            let matches = self.fetch_all_sports_matches().await.unwrap_or_default();
+            if let Some(m) = matches.iter().find(|m| m.id == media.id) {
+                for s in &m.streams {
+                    if let Ok(strms) = self.fetch_streams(&m.category, &s.id).await {
+                        if !strms.is_empty() {
+                            streams = strms;
+                            break;
+                        }
+                    }
+                    if let Ok(strms) = self.fetch_streams("admin", &s.id).await {
+                        if !strms.is_empty() {
+                            streams = strms;
+                            break;
+                        }
+                    }
+                }
+                if streams.is_empty() && !m.streams.is_empty() {
+                    streams = m.streams.clone();
+                }
             }
-        };
+        }
 
         if streams.is_empty() {
             return Err(ProviderError::NotFound);
@@ -561,22 +581,35 @@ impl ApiMatchItem {
             _ => None,
         };
         let starts_at = self.extract_starts_at();
-        let poster_url = self.poster_url.or(self.poster);
+        let poster_url = self.poster_url.or(self.poster).map(|p| {
+            if p.starts_with('/') {
+                format!("https://streamed.pk{}", p)
+            } else {
+                p
+            }
+        });
         let is_popular = self.popular.unwrap_or(false);
 
         let streams = self
             .sources
             .into_iter()
             .enumerate()
-            .map(|(idx, s)| MatchStream {
-                id: s.id.unwrap_or_else(|| {
+            .map(|(idx, s)| {
+                let stream_id = s.id.clone().unwrap_or_else(|| {
                     format!("stream-{}", s.stream_no.unwrap_or((idx + 1) as u32))
-                }),
-                hd_url: None,
-                sd_url: None,
-                embed_url: None,
-                language: None,
-                quality: Quality::Auto,
+                });
+                let embed_url = match (&s.source, &s.id) {
+                    (Some(src), Some(sid)) => Some(format!("https://embed.st/embed/{src}/{sid}/1")),
+                    _ => None,
+                };
+                MatchStream {
+                    id: stream_id,
+                    hd_url: None,
+                    sd_url: None,
+                    embed_url,
+                    language: None,
+                    quality: Quality::Auto,
+                }
             })
             .collect();
 
