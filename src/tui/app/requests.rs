@@ -827,6 +827,8 @@ impl App {
 
                 let current_id = if self.state.active_screen == Screen::Details {
                     self.state.active_subject_id.clone()
+                } else if self.state.active_tab == crate::tui::state::Tab::Anime {
+                    self.state.anime_tab.selected_anime().map(|a| a.id.clone())
                 } else {
                     self.state
                         .search_list_state

@@ -841,37 +841,84 @@ impl App {
                         }
                         KeyCode::Up => {
                             if self.state.active_tab == crate::tui::state::Tab::Anime {
-                                if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
-                                    self.state.anime_tab.selected_idx = self.state.anime_tab.selected_idx.saturating_sub(1);
+                                if self.state.anime_tab.focus
+                                    == crate::tui::state::AnimePanelFocus::Results
+                                {
+                                    let prev = self.state.anime_tab.selected_idx;
+                                    self.state.anime_tab.selected_idx =
+                                        self.state.anime_tab.selected_idx.saturating_sub(1);
+                                    if prev != self.state.anime_tab.selected_idx {
+                                        if let Some(media) =
+                                            self.state.anime_tab.selected_anime().cloned()
+                                        {
+                                            crate::tui::app::anime::fetch_anime_poster(
+                                                &mut self.state,
+                                                &self.action_sender,
+                                                &media,
+                                            );
+                                        }
+                                    }
                                 } else {
-                                    self.state.anime_tab.selected_episode_idx = self.state.anime_tab.selected_episode_idx.saturating_sub(1);
+                                    self.state.anime_tab.selected_episode_idx = self
+                                        .state
+                                        .anime_tab
+                                        .selected_episode_idx
+                                        .saturating_sub(1);
                                 }
                             } else if self.state.active_tab == crate::tui::state::Tab::Sports {
                                 match self.state.sports_tab.focus {
                                     crate::tui::state::SportsColumnFocus::Sports => {
-                                        self.state.sports_tab.selected_sport_idx = self.state.sports_tab.selected_sport_idx.saturating_sub(1);
+                                        self.state.sports_tab.selected_sport_idx =
+                                            self.state.sports_tab.selected_sport_idx.saturating_sub(1);
                                     }
                                     crate::tui::state::SportsColumnFocus::Matches => {
-                                        self.state.sports_tab.selected_match_idx = self.state.sports_tab.selected_match_idx.saturating_sub(1);
+                                        self.state.sports_tab.selected_match_idx =
+                                            self.state.sports_tab.selected_match_idx.saturating_sub(1);
                                     }
                                     crate::tui::state::SportsColumnFocus::Streams => {
-                                        self.state.sports_tab.selected_stream_idx = self.state.sports_tab.selected_stream_idx.saturating_sub(1);
+                                        self.state.sports_tab.selected_stream_idx =
+                                            self.state.sports_tab.selected_stream_idx.saturating_sub(1);
                                     }
                                 }
                             } else if self.state.active_tab == crate::tui::state::Tab::F1 {
-                                self.state.f1_tab.selected_session_idx = self.state.f1_tab.selected_session_idx.saturating_sub(1);
+                                self.state.f1_tab.selected_session_idx =
+                                    self.state.f1_tab.selected_session_idx.saturating_sub(1);
                             } else {
                                 self.action_sender.send(Action::MoveUp).ok();
                             }
                         }
                         KeyCode::Down => {
                             if self.state.active_tab == crate::tui::state::Tab::Anime {
-                                if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                                if self.state.anime_tab.focus
+                                    == crate::tui::state::AnimePanelFocus::Results
+                                {
                                     if !self.state.anime_tab.results.is_empty() {
-                                        self.state.anime_tab.selected_idx = (self.state.anime_tab.selected_idx + 1).min(self.state.anime_tab.results.len() - 1);
+                                        let prev = self.state.anime_tab.selected_idx;
+                                        self.state.anime_tab.selected_idx = (self
+                                            .state
+                                            .anime_tab
+                                            .selected_idx
+                                            + 1)
+                                        .min(self.state.anime_tab.results.len() - 1);
+                                        if prev != self.state.anime_tab.selected_idx {
+                                            if let Some(media) =
+                                                self.state.anime_tab.selected_anime().cloned()
+                                            {
+                                                crate::tui::app::anime::fetch_anime_poster(
+                                                    &mut self.state,
+                                                    &self.action_sender,
+                                                    &media,
+                                                );
+                                            }
+                                        }
                                     }
                                 } else if !self.state.anime_tab.episodes.is_empty() {
-                                    self.state.anime_tab.selected_episode_idx = (self.state.anime_tab.selected_episode_idx + 1).min(self.state.anime_tab.episodes.len() - 1);
+                                    self.state.anime_tab.selected_episode_idx = (self
+                                        .state
+                                        .anime_tab
+                                        .selected_episode_idx
+                                        + 1)
+                                    .min(self.state.anime_tab.episodes.len() - 1);
                                 }
                             } else if self.state.active_tab == crate::tui::state::Tab::Sports {
                                 match self.state.sports_tab.focus {
@@ -1218,21 +1265,64 @@ impl App {
                         KeyCode::Char('j') | KeyCode::Char('J')
                             if self.state.active_tab == crate::tui::state::Tab::Anime =>
                         {
-                            if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
+                            if self.state.anime_tab.focus
+                                == crate::tui::state::AnimePanelFocus::Results
+                            {
                                 if !self.state.anime_tab.results.is_empty() {
-                                    self.state.anime_tab.selected_idx = (self.state.anime_tab.selected_idx + 1).min(self.state.anime_tab.results.len() - 1);
+                                    let prev = self.state.anime_tab.selected_idx;
+                                    self.state.anime_tab.selected_idx = (self
+                                        .state
+                                        .anime_tab
+                                        .selected_idx
+                                        + 1)
+                                    .min(self.state.anime_tab.results.len() - 1);
+                                    if prev != self.state.anime_tab.selected_idx {
+                                        if let Some(media) =
+                                            self.state.anime_tab.selected_anime().cloned()
+                                        {
+                                            crate::tui::app::anime::fetch_anime_poster(
+                                                &mut self.state,
+                                                &self.action_sender,
+                                                &media,
+                                            );
+                                        }
+                                    }
                                 }
                             } else if !self.state.anime_tab.episodes.is_empty() {
-                                self.state.anime_tab.selected_episode_idx = (self.state.anime_tab.selected_episode_idx + 1).min(self.state.anime_tab.episodes.len() - 1);
+                                self.state.anime_tab.selected_episode_idx = (self
+                                    .state
+                                    .anime_tab
+                                    .selected_episode_idx
+                                    + 1)
+                                .min(self.state.anime_tab.episodes.len() - 1);
                             }
                         }
                         KeyCode::Char('k') | KeyCode::Char('K')
                             if self.state.active_tab == crate::tui::state::Tab::Anime =>
                         {
-                            if self.state.anime_tab.focus == crate::tui::state::AnimePanelFocus::Results {
-                                self.state.anime_tab.selected_idx = self.state.anime_tab.selected_idx.saturating_sub(1);
+                            if self.state.anime_tab.focus
+                                == crate::tui::state::AnimePanelFocus::Results
+                            {
+                                let prev = self.state.anime_tab.selected_idx;
+                                self.state.anime_tab.selected_idx =
+                                    self.state.anime_tab.selected_idx.saturating_sub(1);
+                                if prev != self.state.anime_tab.selected_idx {
+                                    if let Some(media) =
+                                        self.state.anime_tab.selected_anime().cloned()
+                                    {
+                                        crate::tui::app::anime::fetch_anime_poster(
+                                            &mut self.state,
+                                            &self.action_sender,
+                                            &media,
+                                        );
+                                    }
+                                }
                             } else {
-                                self.state.anime_tab.selected_episode_idx = self.state.anime_tab.selected_episode_idx.saturating_sub(1);
+                                self.state.anime_tab.selected_episode_idx = self
+                                    .state
+                                    .anime_tab
+                                    .selected_episode_idx
+                                    .saturating_sub(1);
                             }
                         }
                         KeyCode::Char('h') | KeyCode::Char('H')

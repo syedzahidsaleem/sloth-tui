@@ -631,6 +631,13 @@ impl App {
                 self.state.anime_tab.results = results;
                 self.state.is_loading = false;
                 self.state.has_search_settled = true;
+                if let Some(first) = self.state.anime_tab.results.first().cloned() {
+                    crate::tui::app::anime::fetch_anime_poster(
+                        &mut self.state,
+                        &self.action_sender,
+                        &first,
+                    );
+                }
             }
             Action::ResumePosition(_pos) => {}
             Action::PlaybackStarted => {

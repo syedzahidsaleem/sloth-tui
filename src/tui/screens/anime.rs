@@ -11,16 +11,15 @@ use ratatui::{
     },
 };
 
-use crate::tui::state::{AnimePanelFocus, AnimeTabState};
+use crate::tui::state::{AnimePanelFocus, AnimeTabState, AppState};
 use crate::tui::theme::Theme;
 
 /// Renders the complete Anime tab screen view.
 pub fn render(
     frame: &mut Frame,
     area: Rect,
-    state: &AnimeTabState,
+    state: &mut AppState,
     theme: &Theme,
-    search_query: &str,
     is_editing: bool,
 ) {
     if area.width < 10 || area.height < 5 {
@@ -39,7 +38,7 @@ pub fn render(
     let panels_area = vertical_layout[1];
     let bottom_area = vertical_layout[2];
 
-    render_search_bar(frame, search_area, search_query, is_editing, theme);
+    render_search_bar(frame, search_area, &state.search_query, is_editing, theme);
 
     // Two-panel layout: Left (35% results) and Right (65% details/episodes)
     let panel_columns =
@@ -49,9 +48,9 @@ pub fn render(
     let left_area = panel_columns[0];
     let right_area = panel_columns[1];
 
-    render_left_panel(frame, left_area, state, theme);
+    render_left_panel(frame, left_area, &state.anime_tab, theme);
     render_right_panel(frame, right_area, state, theme);
-    render_bottom_bar(frame, bottom_area, state, theme);
+    render_bottom_bar(frame, bottom_area, &state.anime_tab, theme);
 }
 
 /// Renders the top search bar for searching anime.
@@ -244,8 +243,8 @@ fn render_left_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme
 }
 
 /// Renders the right panel (65% width) with episode list and details.
-fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, theme: &Theme) {
-    let is_focused = state.focus == AnimePanelFocus::Episodes;
+fn render_right_panel(frame: &mut Frame, area: Rect, state: &mut AppState, theme: &Theme) {
+    let is_focused = state.anime_tab.focus == AnimePanelFocus::Episodes;
     let border_style = if is_focused {
         theme.border_focus
     } else {
@@ -267,7 +266,7 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
-    let selected_anime = state.selected_anime();
+    let selected_anime = state.anime_tab.selected_anime().cloned();
     if selected_anime.is_none() {
         let placeholder = Paragraph::new(vec![
             Line::from(""),
@@ -281,16 +280,70 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
     let anime = selected_anime.unwrap();
 
     // Split inner area into top metadata and bottom episode list
+    let meta_height = if inner.height >= 16 { 9 } else { 5 };
     let content_split = Layout::vertical([
-        Constraint::Length(5),
+        Constraint::Length(meta_height),
         Constraint::Length(1),
         Constraint::Min(0),
     ])
     .split(inner);
 
-    let meta_area = content_split[0];
+    let meta_container = content_split[0];
     let sep_area = content_split[1];
     let episodes_area = content_split[2];
+
+    let show_poster =
+        state.poster_image.is_some() && meta_container.width >= 40 && meta_container.height >= 4;
+    let (poster_area, meta_area) = if show_poster {
+        let poster_w = ((meta_container.height as f32 * 1.5).round() as u16).clamp(8, 20);
+        let h_chunks = Layout::horizontal([
+            Constraint::Length(poster_w),
+            Constraint::Length(1),
+            Constraint::Min(20),
+        ])
+        .split(meta_container);
+        (Some(h_chunks[0]), h_chunks[2])
+    } else {
+        (None, meta_container)
+    };
+
+    if let Some(p_area) = poster_area {
+        if let Some(img) = &state.poster_image {
+            if let Some(picker) = &mut state.image_picker {
+                let img_width = p_area.width;
+                let img_height = p_area.height;
+                if img_width > 0 && img_height > 0 {
+                    crate::tui::clear_area(frame, p_area, theme);
+                    if let Some((proto_area, proto)) = &mut state.poster_protocol {
+                        if proto_area.width == img_width && proto_area.height == img_height {
+                            let image_widget = ratatui_image::Image::new(proto);
+                            frame.render_widget(image_widget, p_area);
+                        } else if let Ok(protocol) = picker.new_protocol(
+                            (**img).clone(),
+                            p_area.into(),
+                            ratatui_image::Resize::Fit(None),
+                        ) {
+                            state.poster_protocol = Some((p_area, protocol));
+                            if let Some((_, p)) = &state.poster_protocol {
+                                let image_widget = ratatui_image::Image::new(p);
+                                frame.render_widget(image_widget, p_area);
+                            }
+                        }
+                    } else if let Ok(protocol) = picker.new_protocol(
+                        (**img).clone(),
+                        p_area.into(),
+                        ratatui_image::Resize::Fit(None),
+                    ) {
+                        state.poster_protocol = Some((p_area, protocol));
+                        if let Some((_, p)) = &state.poster_protocol {
+                            let image_widget = ratatui_image::Image::new(p);
+                            frame.render_widget(image_widget, p_area);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     // Metadata header
     let rating_str = anime
@@ -312,14 +365,14 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
                 .fg(theme.accent.fg.unwrap_or(Color::Cyan)),
         )]),
         Line::from(vec![
-            Span::styled("  ⛩ AniList: ", theme.lavender),
+            Span::styled("⛩ AniList: ", theme.lavender),
             Span::styled("Completed  ", theme.teal),
             Span::styled(format!("{rating_str}  "), theme.rating),
             Span::styled(format!("•  Genres: {genres_str}"), theme.text_dim),
         ]),
         Line::from(vec![Span::styled(
             format!(
-                "  {}",
+                "{}",
                 anime
                     .overview
                     .as_deref()
@@ -341,8 +394,8 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
 
     // Episode list rendering
     let fallback_count = anime.episodes_count.unwrap_or(0);
-    let total_episodes = if !state.episodes.is_empty() {
-        state.episodes.len()
+    let total_episodes = if !state.anime_tab.episodes.is_empty() {
+        state.anime_tab.episodes.len()
     } else {
         fallback_count as usize
     };
@@ -361,7 +414,7 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
     }
 
     let visible_episodes = episodes_area.height as usize;
-    let selected_ep_idx = state.selected_episode_idx;
+    let selected_ep_idx = state.anime_tab.selected_episode_idx;
 
     let ep_scroll_offset = if selected_ep_idx >= visible_episodes {
         selected_ep_idx - visible_episodes + 1
@@ -378,14 +431,15 @@ fn render_right_panel(frame: &mut Frame, area: Rect, state: &AnimeTabState, them
         let is_watched = idx > 0 && idx < 3; // Mock watched state for earlier episodes
 
         let ep_num = idx + 1;
-        let ep_title = if !state.episodes.is_empty() && idx < state.episodes.len() {
-            state.episodes[idx]
-                .title
-                .clone()
-                .unwrap_or_else(|| format!("Episode {ep_num}"))
-        } else {
-            format!("Episode {ep_num}")
-        };
+        let ep_title =
+            if !state.anime_tab.episodes.is_empty() && idx < state.anime_tab.episodes.len() {
+                state.anime_tab.episodes[idx]
+                    .title
+                    .clone()
+                    .unwrap_or_else(|| format!("Episode {ep_num}"))
+            } else {
+                format!("Episode {ep_num}")
+            };
 
         let label = format!("S01E{ep_num:02} — {ep_title}");
 

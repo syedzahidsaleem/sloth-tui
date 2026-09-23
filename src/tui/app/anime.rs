@@ -21,6 +21,8 @@ pub fn handle_anime_search(
     state.is_loading = true;
     state.has_search_settled = false;
     state.search_error = None;
+    state.poster_image = None;
+    state.poster_protocol = None;
     state.anime_tab.selected_idx = 0;
     state.anime_tab.selected_episode_idx = 0;
     state.anime_tab.focus = AnimePanelFocus::Results;
@@ -34,6 +36,43 @@ pub fn handle_anime_search(
     });
 }
 
+/// Asynchronously fetches the poster image for the selected anime if available.
+pub fn fetch_anime_poster(
+    state: &mut AppState,
+    tx: &mpsc::UnboundedSender<Action>,
+    media: &crate::providers::models::Media,
+) {
+    let id = media.id.clone();
+    state.poster_image = None;
+    state.poster_protocol = None;
+
+    if let Some(cached_img) = state.image_cache.get(&id) {
+        state.poster_image = Some(std::sync::Arc::clone(cached_img));
+        return;
+    }
+
+    if let Some(url) = media.poster_url.clone() {
+        let action_tx = tx.clone();
+        let id_clone = id.clone();
+        tokio::spawn(async move {
+            let client = reqwest::Client::new();
+            if let Ok(resp) = client
+                .get(&url)
+                .header("User-Agent", "Mozilla/5.0")
+                .send()
+                .await
+            {
+                if let Ok(bytes) = resp.bytes().await {
+                    if let Ok(dyn_img) = image::load_from_memory(&bytes) {
+                        let arc_img = std::sync::Arc::new(dyn_img);
+                        let _ = action_tx.send(Action::PosterSuccess(id_clone, arc_img));
+                    }
+                }
+            }
+        });
+    }
+}
+
 /// Toggles audio and subtitle preference between dubbed and subbed.
 pub fn handle_sub_dub_toggle(state: &mut AppState) {
     state.anime_tab.is_dub = !state.anime_tab.is_dub;
@@ -45,6 +84,7 @@ pub fn handle_anime_select(state: &mut AppState, tx: &mpsc::UnboundedSender<Acti
     if let Some(media) = state.anime_tab.selected_anime().cloned() {
         state.anime_tab.focus = AnimePanelFocus::Episodes;
         state.anime_tab.selected_episode_idx = 0;
+        fetch_anime_poster(state, tx, &media);
 
         // Populate initial episode list or fetch from provider
         let ep_count = media.episodes_count.unwrap_or(0);
