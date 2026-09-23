@@ -107,16 +107,29 @@ impl FourKHdHubClient {
             let mirror_headers = mirror.headers.clone();
             async move {
                 let fetch = async {
-                    if mirror_url.contains("hubcloud.") {
-                        hubcloud::resolve(&client, &mirror_url).await
-                    } else if mirror_url.contains("hubdrive.") {
-                        hubcloud::resolve_hubdrive(&client, &mirror_url).await
+                    let direct_url =
+                        if !mirror_url.contains("hubcloud.") && !mirror_url.contains("hubdrive.") {
+                            if let Ok(unshortened) =
+                                hubcloud::unshorten_landing_page(&client, &mirror_url).await
+                            {
+                                unshortened
+                            } else {
+                                mirror_url.clone()
+                            }
+                        } else {
+                            mirror_url.clone()
+                        };
+
+                    if direct_url.contains("hubcloud.") {
+                        hubcloud::resolve(&client, &direct_url).await
+                    } else if direct_url.contains("hubdrive.") {
+                        hubcloud::resolve_hubdrive(&client, &direct_url).await
                     } else {
-                        hubcloud::validate_playback_url(&mirror_url)
+                        hubcloud::validate_playback_url(&direct_url)
                             .map(|url| vec![(url, mirror_label, mirror_headers)])
                     }
                 };
-                tokio::time::timeout(std::time::Duration::from_millis(4000), fetch)
+                tokio::time::timeout(std::time::Duration::from_millis(8000), fetch)
                     .await
                     .map_err(|_| {
                         FourKHdHubError::NoPlayableMirror("mirror resolver timed out".into())

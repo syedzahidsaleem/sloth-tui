@@ -98,6 +98,87 @@ pub async fn resolve_hubdrive(
     resolve(client, &hubcloud_url).await
 }
 
+fn rot13(input: &str) -> String {
+    input
+        .chars()
+        .map(|c| match c {
+            'a'..='m' | 'A'..='M' => ((c as u8) + 13) as char,
+            'n'..='z' | 'N'..='Z' => ((c as u8) - 13) as char,
+            _ => c,
+        })
+        .collect()
+}
+
+pub async fn unshorten_landing_page(
+    client: &reqwest::Client,
+    url: &str,
+) -> Result<String, FourKHdHubError> {
+    use base64::Engine;
+    let html = client
+        .get(url)
+        .header("User-Agent", crate::net::DEFAULT_BROWSER_USER_AGENT)
+        .header("Referer", "https://4khdhub.one/")
+        .send()
+        .await?
+        .error_for_status()?
+        .text()
+        .await?;
+
+    // Check for s('o', '<blob>', ...) landing page encoding
+    for needle in &["s('o',", "s(\"o\",", "s('o' ,", "s(\"o\" ,"] {
+        if let Some(start_idx) = html.find(needle) {
+            let after = &html[start_idx..];
+            if let Some(q1) = after.find('\'').or_else(|| after.find('"')) {
+                let after_q1 = &after[q1 + 1..];
+                if let Some(q2) = after_q1.find('\'').or_else(|| after_q1.find('"')) {
+                    let after_q2 = &after_q1[q2 + 1..];
+                    if let Some(q3) = after_q2.find('\'').or_else(|| after_q2.find('"')) {
+                        let blob_candidate = &after_q2[q3 + 1..];
+                        if let Some(q4) = blob_candidate
+                            .find('\'')
+                            .or_else(|| blob_candidate.find('"'))
+                        {
+                            let b64 = &blob_candidate[..q4];
+                            if let Ok(b1) =
+                                base64::engine::general_purpose::STANDARD.decode(b64.as_bytes())
+                                && let Ok(s1) = String::from_utf8(b1)
+                                && let Ok(b2) =
+                                    base64::engine::general_purpose::STANDARD.decode(s1.as_bytes())
+                                && let Ok(s2) = String::from_utf8(b2)
+                            {
+                                let s3 = rot13(&s2);
+                                if let Ok(b4) =
+                                    base64::engine::general_purpose::STANDARD.decode(s3.as_bytes())
+                                    && let Ok(s4) = String::from_utf8(b4)
+                                    && let Ok(v) = serde_json::from_str::<serde_json::Value>(&s4)
+                                    && let Some(o_b64) = v.get("o").and_then(|o| o.as_str())
+                                    && let Ok(dest_bytes) =
+                                        base64::engine::general_purpose::STANDARD
+                                            .decode(o_b64.as_bytes())
+                                    && let Ok(dest_url) = String::from_utf8(dest_bytes)
+                                {
+                                    if dest_url.starts_with("https://") {
+                                        return Ok(dest_url);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback: check if the page contains a direct hubcloud/hubdrive link
+    if let Some(hubcloud) = extract_hubcloud_drive_url(&html) {
+        return Ok(hubcloud);
+    }
+
+    Err(FourKHdHubError::Parse(
+        "Failed to unshorten mirror landing page".into(),
+    ))
+}
+
 fn extract_hubcloud_drive_url(html: &str) -> Option<String> {
     let document = Html::parse_document(html);
     let links = Selector::parse("a[href]").ok()?;
@@ -376,5 +457,60 @@ mod tests {
         );
         assert_eq!(score("https://gpdl.example.com/stream", "Google Drive"), 3);
         assert_eq!(score("https://unknown-mirror.org/file.mkv", "Unknown"), 4);
+    }
+
+    #[test]
+    fn test_rot13_and_landing_page_decode() {
+        use base64::Engine;
+        let original_url = "https://hubcloud.ist/drive/go3110374dzh0ih";
+        let dest_b64 = base64::engine::general_purpose::STANDARD.encode(original_url);
+        let json_payload =
+            format!(r#"{{"w":10,"l":"https://greenmotors.club/homelander/","o":"{dest_b64}"}}"#);
+        let s3 = base64::engine::general_purpose::STANDARD.encode(json_payload);
+        let s2 = rot13(&s3);
+        let s1 = base64::engine::general_purpose::STANDARD.encode(s2);
+        let blob = base64::engine::general_purpose::STANDARD.encode(s1);
+
+        let html =
+            format!(r#"<html><body><script>s('o','{blob}',180*1000);</script></body></html>"#);
+
+        // Verify extraction and decoding
+        let mut extracted_url = None;
+        if let Some(start_idx) = html.find("s('o',") {
+            let after = &html[start_idx..];
+            if let Some(q1) = after.find('\'') {
+                let after_q1 = &after[q1 + 1..];
+                if let Some(q2) = after_q1.find('\'') {
+                    let after_q2 = &after_q1[q2 + 1..];
+                    if let Some(q3) = after_q2.find('\'') {
+                        let blob_candidate = &after_q2[q3 + 1..];
+                        if let Some(q4) = blob_candidate.find('\'') {
+                            let b64 = &blob_candidate[..q4];
+                            let b1 = base64::engine::general_purpose::STANDARD
+                                .decode(b64.as_bytes())
+                                .unwrap();
+                            let s1_str = String::from_utf8(b1).unwrap();
+                            let b2 = base64::engine::general_purpose::STANDARD
+                                .decode(s1_str.as_bytes())
+                                .unwrap();
+                            let s2_str = String::from_utf8(b2).unwrap();
+                            let s3_str = rot13(&s2_str);
+                            let b4 = base64::engine::general_purpose::STANDARD
+                                .decode(s3_str.as_bytes())
+                                .unwrap();
+                            let s4_str = String::from_utf8(b4).unwrap();
+                            let v: serde_json::Value = serde_json::from_str(&s4_str).unwrap();
+                            let o_b64 = v.get("o").unwrap().as_str().unwrap();
+                            let dest_bytes = base64::engine::general_purpose::STANDARD
+                                .decode(o_b64.as_bytes())
+                                .unwrap();
+                            extracted_url = Some(String::from_utf8(dest_bytes).unwrap());
+                        }
+                    }
+                }
+            }
+        }
+
+        assert_eq!(extracted_url, Some(original_url.to_string()));
     }
 }
