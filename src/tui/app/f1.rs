@@ -60,7 +60,7 @@ pub fn handle_f1_session_play(
         }
 
         // Fallback: Check StreamedPk motorsport matches
-        let streamed_provider = crate::providers::sports::streamed::StreamedPkProvider::new();
+        let streamed_provider = crate::providers::sports::streamed::StreamedProvider::new();
         if let Ok(matches) = streamed_provider.fetch_matches("f1").await {
             if let Some(m) = matches.into_iter().find(|m| {
                 let t = m.title.to_lowercase();

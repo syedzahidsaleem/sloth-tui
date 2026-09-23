@@ -341,51 +341,8 @@ impl Provider for HiAnimeProvider {
         })?;
 
         let html = parsed.html.unwrap_or_default();
-        let document = Html::parse_document(&html);
-        let server_selector =
-            Selector::parse(".server-item").map_err(|e| ProviderError::Parsing(e.to_string()))?;
-
         let is_dub = self.is_dub.load(Ordering::Relaxed);
-        let desired_type = if is_dub { "dub" } else { "sub" };
-
-        let mut embed_urls = Vec::new();
-        use base64::Engine;
-
-        for el in document.select(&server_selector) {
-            let server_type = el.value().attr("data-type").unwrap_or_default();
-            if server_type != desired_type && !server_type.is_empty() {
-                continue;
-            }
-
-            if let Some(hash) = el.value().attr("data-hash") {
-                if let Ok(decoded_bytes) =
-                    base64::engine::general_purpose::STANDARD.decode(hash.as_bytes())
-                {
-                    if let Ok(embed_url) = String::from_utf8(decoded_bytes) {
-                        if embed_url.starts_with("https://") {
-                            embed_urls.push(embed_url);
-                        }
-                    }
-                }
-            }
-        }
-
-        // If desired type (dub/sub) not found, try any available server
-        if embed_urls.is_empty() {
-            for el in document.select(&server_selector) {
-                if let Some(hash) = el.value().attr("data-hash") {
-                    if let Ok(decoded_bytes) =
-                        base64::engine::general_purpose::STANDARD.decode(hash.as_bytes())
-                    {
-                        if let Ok(embed_url) = String::from_utf8(decoded_bytes) {
-                            if embed_url.starts_with("https://") {
-                                embed_urls.push(embed_url);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        let embed_urls = parse_server_embed_urls(&html, is_dub)?;
 
         let mut stream_urls = Vec::new();
 
@@ -483,6 +440,53 @@ impl Provider for HiAnimeProvider {
             Err(_) => false,
         }
     }
+}
+
+fn parse_server_embed_urls(html: &str, is_dub: bool) -> Result<Vec<String>, ProviderError> {
+    use base64::Engine;
+    let document = Html::parse_document(html);
+    let server_selector =
+        Selector::parse(".server-item").map_err(|e| ProviderError::Parsing(e.to_string()))?;
+
+    let desired_type = if is_dub { "dub" } else { "sub" };
+    let mut embed_urls = Vec::new();
+
+    for el in document.select(&server_selector) {
+        let server_type = el.value().attr("data-type").unwrap_or_default();
+        if server_type != desired_type && !server_type.is_empty() {
+            continue;
+        }
+
+        if let Some(hash) = el.value().attr("data-hash") {
+            if let Ok(decoded_bytes) =
+                base64::engine::general_purpose::STANDARD.decode(hash.as_bytes())
+            {
+                if let Ok(embed_url) = String::from_utf8(decoded_bytes) {
+                    if embed_url.starts_with("https://") {
+                        embed_urls.push(embed_url);
+                    }
+                }
+            }
+        }
+    }
+
+    if embed_urls.is_empty() {
+        for el in document.select(&server_selector) {
+            if let Some(hash) = el.value().attr("data-hash") {
+                if let Ok(decoded_bytes) =
+                    base64::engine::general_purpose::STANDARD.decode(hash.as_bytes())
+                {
+                    if let Ok(embed_url) = String::from_utf8(decoded_bytes) {
+                        if embed_url.starts_with("https://") {
+                            embed_urls.push(embed_url);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(embed_urls)
 }
 
 fn extract_window_p_blob(html: &str) -> Option<String> {
