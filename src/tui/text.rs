@@ -544,7 +544,7 @@ pub fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
     lines
 }
 
-pub use crate::net::is_http_url;
+pub use crate::net::{is_http_url, is_playable_stream_url};
 pub use crate::providers::models::extract_4digit_year;
 
 pub fn format_duration(secs: u64) -> String {

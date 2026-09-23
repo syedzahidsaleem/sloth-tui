@@ -40,6 +40,22 @@ pub fn is_http_url(source: &str) -> bool {
     trimmed.starts_with("http://") || trimmed.starts_with("https://")
 }
 
+/// Validates whether a source string is a playable media stream URL
+/// (HTTP, HTTPS, RTMP, RTMPS, RTSP, RTSPS, MMS, MMSH, UDP, SRT).
+pub fn is_playable_stream_url(source: &str) -> bool {
+    let trimmed = source.trim();
+    trimmed.starts_with("http://")
+        || trimmed.starts_with("https://")
+        || trimmed.starts_with("rtmp://")
+        || trimmed.starts_with("rtmps://")
+        || trimmed.starts_with("rtsp://")
+        || trimmed.starts_with("rtsps://")
+        || trimmed.starts_with("mms://")
+        || trimmed.starts_with("mmsh://")
+        || trimmed.starts_with("udp://")
+        || trimmed.starts_with("srt://")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -52,5 +68,19 @@ mod tests {
         assert!(!is_http_url("/local/path/file.m3u"));
         assert!(!is_http_url("stremio://addon.example.com"));
         assert!(!is_http_url(""));
+    }
+
+    #[test]
+    fn test_is_playable_stream_url() {
+        assert!(is_playable_stream_url("http://example.com/live.m3u8"));
+        assert!(is_playable_stream_url("https://example.com/video.mp4"));
+        assert!(is_playable_stream_url("rtmp://example.com/live/stream"));
+        assert!(is_playable_stream_url("rtsp://example.com:554/live"));
+        assert!(is_playable_stream_url("mms://example.com/tv"));
+        assert!(is_playable_stream_url("udp://@239.1.1.1:1234"));
+        assert!(is_playable_stream_url("srt://example.com:9000"));
+        assert!(!is_playable_stream_url("/local/path/file.m3u"));
+        assert!(!is_playable_stream_url("invalid-url"));
+        assert!(!is_playable_stream_url(""));
     }
 }
