@@ -44,31 +44,57 @@ pub fn handle_f1_session_play(
 
     let tx = tx.clone();
     tokio::spawn(async move {
-        match fetch_f1_streams().await {
-            Ok(streams) if !streams.is_empty() => {
-                let first_stream = &streams[0];
-                let source = PlaybackSource {
-                    provider: ProviderKind::FourKHdHub,
-                    url: first_stream.url.clone(),
-                    headers: first_stream.headers.clone(),
-                    subtitle: None,
-                    source_label: format!("F1 Live — {session_name}"),
-                };
-                let _ = tx.send(Action::DispatchPlayback(source));
-                let _ = tx.send(Action::PlaybackStarted);
-            }
-            Ok(_) => {
-                tracing::warn!("No active Formula 1 streams found in sports playlist");
-                let _ = tx.send(Action::SetStatus(
-                    "No active F1 streams found. Broadcasts go live ~15 mins before session start."
-                        .to_string(),
-                ));
-            }
-            Err(e) => {
-                tracing::warn!("Failed to fetch F1 streams: {e}");
-                let _ = tx.send(Action::SetStatus(format!("Failed to load F1 streams: {e}")));
+        let iptv_streams = fetch_f1_streams().await.unwrap_or_default();
+        if !iptv_streams.is_empty() {
+            let first_stream = &iptv_streams[0];
+            let source = PlaybackSource {
+                provider: ProviderKind::FourKHdHub,
+                url: first_stream.url.clone(),
+                headers: first_stream.headers.clone(),
+                subtitle: None,
+                source_label: format!("F1 Live — {session_name}"),
+            };
+            let _ = tx.send(Action::DispatchPlayback(source));
+            let _ = tx.send(Action::PlaybackStarted);
+            return;
+        }
+
+        // Fallback: Check StreamedPk motorsport matches
+        let streamed_provider = crate::providers::sports::streamed::StreamedPkProvider::new();
+        if let Ok(matches) = streamed_provider.fetch_matches("f1").await {
+            if let Some(m) = matches.into_iter().find(|m| {
+                let t = m.title.to_lowercase();
+                t.contains("f1") || t.contains("formula") || t.contains("grand prix")
+            }) {
+                if let Ok(sources) = streamed_provider.fetch_stream_sources(&m.id).await {
+                    if let Some(src) = sources.first() {
+                        let play_url = src.embed_url.clone().unwrap_or_else(|| src.source.clone());
+                        let source = PlaybackSource {
+                            provider: ProviderKind::FourKHdHub,
+                            url: play_url,
+                            headers: vec![
+                                (
+                                    "User-Agent".into(),
+                                    crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
+                                ),
+                                ("Referer".into(), "https://streamed.pk/".into()),
+                            ],
+                            subtitle: None,
+                            source_label: format!("F1 Live — {}", m.title),
+                        };
+                        let _ = tx.send(Action::DispatchPlayback(source));
+                        let _ = tx.send(Action::PlaybackStarted);
+                        return;
+                    }
+                }
             }
         }
+
+        tracing::warn!("No active Formula 1 streams found");
+        let _ = tx.send(Action::SetStatus(
+            "No active F1 streams found. Broadcasts go live ~15 mins before session start."
+                .to_string(),
+        ));
     });
 }
 

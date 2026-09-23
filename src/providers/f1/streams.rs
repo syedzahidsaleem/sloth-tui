@@ -47,7 +47,10 @@ pub fn parse_f1_m3u(content: &str) -> Vec<StreamUrl> {
                 url: ch.stream_url,
                 quality: Quality::Auto,
                 is_hls,
-                headers: vec![("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string())],
+                headers: vec![(
+                    "User-Agent".to_string(),
+                    crate::net::DEFAULT_BROWSER_USER_AGENT.to_string(),
+                )],
                 subtitle_url: None,
                 provider_id: "f1",
             }
@@ -74,7 +77,10 @@ pub async fn fetch_f1_streams() -> Result<Vec<StreamUrl>, SlothError> {
                         url: ch.stream_url,
                         quality: Quality::Auto,
                         is_hls,
-                        headers: vec![("User-Agent".to_string(), "Sloth-TUI/0.1.0".to_string())],
+                        headers: vec![(
+                            "User-Agent".to_string(),
+                            crate::net::DEFAULT_BROWSER_USER_AGENT.to_string(),
+                        )],
                         subtitle_url: None,
                         provider_id: "f1",
                     }
