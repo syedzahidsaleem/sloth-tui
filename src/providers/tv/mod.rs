@@ -54,7 +54,10 @@ impl Provider for M3UParser {
             url: media.id.clone(),
             quality: Quality::Auto,
             is_hls: media.id.contains(".m3u8"),
-            headers: Vec::new(),
+            headers: vec![(
+                "User-Agent".into(),
+                crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
+            )],
             subtitle_url: None,
             provider_id: "iptv",
         }])

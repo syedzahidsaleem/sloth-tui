@@ -809,12 +809,20 @@ impl App {
                         idx_opt.and_then(|idx| self.state.search_results.get(idx).cloned());
                     if let Some(item) = item_opt {
                         if self.state.is_tv_mode || item.stype == 3 {
+                            let label = if item.title.is_empty() {
+                                "Live TV".to_string()
+                            } else {
+                                format!("{} (Live TV)", item.title)
+                            };
                             let source = crate::providers::models::PlaybackSource {
                                 provider: item.provider,
                                 url: item.id.clone(),
-                                headers: Vec::new(),
+                                headers: vec![(
+                                    "User-Agent".into(),
+                                    crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
+                                )],
                                 subtitle: None,
-                                source_label: "Live TV".to_string(),
+                                source_label: label,
                             };
                             self.dispatch_playback_or_notify(source);
                             return None;
@@ -894,12 +902,20 @@ impl App {
         let item_opt = idx_opt.and_then(|idx| self.state.search_results.get(idx).cloned());
         if let Some(item) = item_opt {
             if self.state.is_tv_mode || item.stype == 3 {
+                let label = if item.title.is_empty() {
+                    "Live TV".to_string()
+                } else {
+                    format!("{} (Live TV)", item.title)
+                };
                 let source = crate::providers::models::PlaybackSource {
                     provider: item.provider,
                     url: item.id.clone(),
-                    headers: Vec::new(),
+                    headers: vec![(
+                        "User-Agent".into(),
+                        crate::net::DEFAULT_BROWSER_USER_AGENT.into(),
+                    )],
                     subtitle: None,
-                    source_label: "Live TV".to_string(),
+                    source_label: label,
                 };
                 self.dispatch_playback_or_notify(source);
                 return;
